@@ -24,10 +24,12 @@ class BroadcastService {
       return;
     }
     final result = await ApiClient.post('/api/v1/broadcasts', {
-      'lat': lat,
-      'lng': lng,
+      'latitude': lat,
+      'longitude': lng,
     });
-    broadcastId = result['id'] as String?;
+    // Backend returns {"broadcast": {...}}
+    final broadcast = result['broadcast'] as Map<String, dynamic>?;
+    broadcastId = broadcast?['id'] as String?;
     if (broadcastId != null) _startHeartbeat();
   }
 
@@ -55,7 +57,7 @@ class BroadcastService {
     try {
       await ApiClient.patch(
         '/api/v1/broadcasts/$broadcastId/location',
-        {'lat': lat, 'lng': lng},
+        {'latitude': lat, 'longitude': lng},
       );
     } catch (_) {}
   }
@@ -63,15 +65,17 @@ class BroadcastService {
   /// On app startup, check if the server still has an active broadcast for
   /// this user and restore local state + restart heartbeat.
   Future<void> restore() async {
-    if (kMockMode) return; // Nothing to restore in mock mode
+    if (kMockMode) return;
     try {
       final result = await ApiClient.get('/api/v1/broadcasts/me');
       if (result is Map<String, dynamic>) {
-        broadcastId = result['id'] as String?;
+        // Backend returns {"broadcast": {...}}
+        final broadcast = result['broadcast'] as Map<String, dynamic>?;
+        broadcastId = broadcast?['id'] as String?;
         if (broadcastId != null) _startHeartbeat();
       }
     } on ApiException catch (e) {
-      if (e.statusCode == 404) return; // No active broadcast — expected.
+      if (e.statusCode == 404) return;
     } catch (_) {}
   }
 

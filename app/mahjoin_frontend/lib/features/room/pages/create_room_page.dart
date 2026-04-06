@@ -15,19 +15,38 @@ class CreateRoomPage extends StatefulWidget {
 
 class _CreateRoomPageState extends State<CreateRoomPage> {
   bool _loading = false;
+  final _nameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _createRoom() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a room name')),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       final location = await LocationService.instance.getCurrentPosition();
       final result = await ApiClient.post('/api/v1/rooms', {
-        'lat': location.latitude,
-        'lng': location.longitude,
+        'name': name,
+        'latitude': location.latitude,
+        'longitude': location.longitude,
+        'isPublic': true,
       });
-      final roomId = result['id'] as String?;
+      // Backend returns {"room": {...}}
+      final room = result['room'] as Map<String, dynamic>?;
+      final roomId = room?['id'] as String?;
       if (!mounted) return;
       setState(() => _loading = false);
-      Navigator.of(context).pop(); // close bottom sheet
+      Navigator.of(context).pop();
       if (roomId != null) {
         context.push(AppRoutes.room(roomId));
       }
@@ -66,7 +85,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Info card
+            // Location info card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -98,6 +117,21 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                   ),
                 ],
               ),
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Room name input
+            Text('Room Name', style: AppTypography.labelLarge),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                hintText: 'e.g. Coffee shop near MRT',
+                prefixIcon: Icon(Icons.edit_rounded,
+                    color: AppColors.textMuted, size: 20),
+              ),
+              textCapitalization: TextCapitalization.sentences,
             ),
 
             const SizedBox(height: AppSpacing.lg),
@@ -140,7 +174,6 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  // Slot display
                   Row(
                     children: List.generate(4, (i) {
                       final isMe = i == 0;

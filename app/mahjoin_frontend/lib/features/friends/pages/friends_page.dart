@@ -58,10 +58,13 @@ class _FriendsPageState extends State<FriendsPage> {
       ]);
       if (!mounted) return;
       setState(() {
-        _friends = (results[0] as List)
+        // Backend wraps lists: {"friends": [...]} and {"requests": [...]}
+        final friendsRaw = (results[0] as Map<String, dynamic>)['friends'] as List<dynamic>? ?? [];
+        final requestsRaw = (results[1] as Map<String, dynamic>)['requests'] as List<dynamic>? ?? [];
+        _friends = friendsRaw
             .map((j) => Friend.fromJson(j as Map<String, dynamic>))
             .toList();
-        _requests = (results[1] as List)
+        _requests = requestsRaw
             .map((j) => FriendRequest.fromJson(j as Map<String, dynamic>))
             .toList();
         _loading = false;
@@ -161,7 +164,7 @@ class _FriendsPageState extends State<FriendsPage> {
   Future<void> _sendFriendRequest(String targetUsername) async {
     try {
       await ApiClient.post('/api/v1/friends/requests', {
-        'username': targetUsername,
+        'toUsername': targetUsername,
       });
       _snack('Friend request sent!');
     } catch (e) {

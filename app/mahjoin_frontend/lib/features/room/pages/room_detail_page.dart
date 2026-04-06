@@ -35,8 +35,10 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     });
     try {
       final json = await ApiClient.get('/api/v1/rooms/${widget.roomId}');
+      // Backend returns {"room": {...}}
+      final roomJson = (json as Map<String, dynamic>)['room'] as Map<String, dynamic>;
       setState(() {
-        _room = Room.fromJson(json as Map<String, dynamic>);
+        _room = Room.fromJson(roomJson);
         _loading = false;
       });
     } catch (e) {

@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 enum PlayerStatus { online, playing, offline }
+
 enum RoomStatus { waiting, full, playing }
 
 String _initials(String name) {
@@ -33,17 +34,26 @@ class Broadcast {
   bool get isFriend => false;
 
   factory Broadcast.fromJson(Map<String, dynamic> json) {
+    // Support both nearby search (distanceMeters) and direct fetch.
+    final distanceM = (json['distanceMeters'] as num?)?.toDouble() ?? 0;
+
+    // Player info lives in the nested `player` object.
+    final player = json['player'] as Map<String, dynamic>?;
+    final playerId = json['playerId'] as String? ?? player?['id'] as String? ?? '';
+    final displayName = player?['displayName'] as String? ??
+        player?['username'] as String? ??
+        json['displayName'] as String? ??
+        'Unknown';
+
     return Broadcast(
       id: json['id'] as String,
-      userId: json['user_id'] as String? ?? '',
-      userName: json['username'] as String? ??
-          json['user_name'] as String? ??
-          'Unknown',
+      userId: playerId,
+      userName: displayName,
       position: LatLng(
-        (json['lat'] as num).toDouble(),
-        (json['lng'] as num).toDouble(),
+        (json['latitude'] as num).toDouble(),
+        (json['longitude'] as num).toDouble(),
       ),
-      distanceKm: ((json['distance_m'] as num?)?.toDouble() ?? 0) / 1000,
+      distanceKm: distanceM / 1000,
       rating: json['rating'] as int?,
     );
   }
@@ -57,11 +67,13 @@ class RoomMember {
 
   String get avatar => _initials(userName);
 
-  factory RoomMember.fromJson(Map<String, dynamic> json) {
+  /// Build from a backend RoomSeat object (contains nested `player`).
+  factory RoomMember.fromSeatJson(Map<String, dynamic> json) {
+    final player = json['player'] as Map<String, dynamic>?;
     return RoomMember(
-      userId: json['user_id'] as String? ?? '',
-      userName: json['username'] as String? ??
-          json['user_name'] as String? ??
+      userId: json['playerId'] as String? ?? player?['id'] as String? ?? '',
+      userName: player?['displayName'] as String? ??
+          player?['username'] as String? ??
           'Unknown',
     );
   }
@@ -97,30 +109,42 @@ class Room {
   List<String> get playerAvatars => members.map((m) => m.avatar).toList();
 
   factory Room.fromJson(Map<String, dynamic> json) {
-    final statusStr = json['status'] as String? ?? 'waiting';
+    // Backend returns uppercase status strings.
+    final statusStr = (json['status'] as String? ?? '').toUpperCase();
     final status = switch (statusStr) {
-      'playing' => RoomStatus.playing,
-      'full' => RoomStatus.full,
+      'PLAYING' => RoomStatus.playing,
+      'FULL' => RoomStatus.full,
       _ => RoomStatus.waiting,
     };
-    final membersJson = json['members'] as List<dynamic>? ?? [];
-    final members = membersJson
-        .map((m) => RoomMember.fromJson(m as Map<String, dynamic>))
+
+    // Seats are the source of truth for members.
+    final seatsJson = json['seats'] as List<dynamic>? ?? [];
+    final members = seatsJson
+        .where((s) => (s as Map<String, dynamic>)['leftAt'] == null)
+        .map((s) => RoomMember.fromSeatJson(s as Map<String, dynamic>))
         .toList();
+
+    // Host info from nested `host` object.
+    final host = json['host'] as Map<String, dynamic>?;
+    final hostName = host?['displayName'] as String? ??
+        host?['username'] as String? ??
+        'Unknown';
 
     return Room(
       id: json['id'] as String,
-      hostId: json['host_id'] as String? ?? '',
-      hostName: json['host_name'] as String? ?? 'Unknown',
+      hostId: json['hostId'] as String? ?? '',
+      hostName: hostName,
       position: LatLng(
-        (json['lat'] as num).toDouble(),
-        (json['lng'] as num).toDouble(),
+        (json['latitude'] as num).toDouble(),
+        (json['longitude'] as num).toDouble(),
       ),
       status: status,
-      currentPlayers: json['current_players'] as int? ?? members.length,
-      maxPlayers: json['max_players'] as int? ?? 4,
-      address: json['address'] as String? ?? 'Room',
-      distanceKm: ((json['distance_m'] as num?)?.toDouble() ?? 0) / 1000,
+      currentPlayers: members.length,
+      maxPlayers: json['maxPlayers'] as int? ?? 4,
+      address: json['placeName'] as String? ??
+          json['name'] as String? ??
+          'Room',
+      distanceKm: ((json['distanceMeters'] as num?)?.toDouble() ?? 0) / 1000,
       members: members,
     );
   }

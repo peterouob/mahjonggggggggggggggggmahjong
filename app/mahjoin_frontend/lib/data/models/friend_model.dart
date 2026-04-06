@@ -8,8 +8,9 @@ String _initials(String name) {
 }
 
 /// Represents a friend from GET /api/v1/friends
+/// Backend returns domain.User objects; id == user's UUID (used for remove).
 class Friend {
-  final String id; // friendship record ID
+  final String id; // friend's user ID — used in DELETE /friends/:id
   final String userId;
   final String userName;
   final bool isOnline;
@@ -37,22 +38,26 @@ class Friend {
     return PlayerStatus.offline;
   }
 
+  /// Backend returns domain.User: {id, username, displayName, avatarUrl, ...}
   factory Friend.fromJson(Map<String, dynamic> json) {
     return Friend(
       id: json['id'] as String,
-      userId: json['user_id'] as String? ?? '',
-      userName: json['username'] as String? ??
-          json['user_name'] as String? ??
+      userId: json['id'] as String,
+      userName: json['displayName'] as String? ??
+          json['username'] as String? ??
           'Unknown',
-      isOnline: json['is_online'] as bool? ?? false,
-      isPlaying: json['is_playing'] as bool? ?? false,
-      distanceKm: ((json['distance_m'] as num?)?.toDouble() ?? 0) / 1000,
+      // Online/playing/distance not available in current backend response.
+      isOnline: json['isOnline'] as bool? ?? false,
+      isPlaying: json['isPlaying'] as bool? ?? false,
+      distanceKm: ((json['distanceMeters'] as num?)?.toDouble() ?? 0) / 1000,
       rating: json['rating'] as int?,
     );
   }
 }
 
 /// Represents an incoming friend request from GET /api/v1/friends/requests
+/// Backend returns the enriched pendingRequestView:
+/// {id, fromUserId, fromUsername, fromDisplayName, createdAt}
 class FriendRequest {
   final String id;
   final String fromUserId;
@@ -69,9 +74,9 @@ class FriendRequest {
   factory FriendRequest.fromJson(Map<String, dynamic> json) {
     return FriendRequest(
       id: json['id'] as String,
-      fromUserId: json['from_user_id'] as String? ?? '',
-      fromUserName: json['from_username'] as String? ??
-          json['from_user_name'] as String? ??
+      fromUserId: json['fromUserId'] as String? ?? '',
+      fromUserName: json['fromDisplayName'] as String? ??
+          json['fromUsername'] as String? ??
           'Unknown',
     );
   }
