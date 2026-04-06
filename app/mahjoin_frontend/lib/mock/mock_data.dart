@@ -2,7 +2,8 @@ import 'package:latlong2/latlong.dart';
 
 // ─── Mock mode flag ───────────────────────────────────────────────────────────
 // Set to true to run the app with local mock data (no backend required).
-const kMockMode = true;
+const kMockMode =
+  bool.fromEnvironment('MOCK_MODE', defaultValue: false);
 
 // ─── Dev mock users (match backend MOCK_USERS=true) ─────────────────────────
 

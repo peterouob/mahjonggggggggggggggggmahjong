@@ -12,6 +12,34 @@
 
 ---
 
+## 快速啟動（連線到已部署後端）
+
+後端目前已部署於 `168.138.210.65:8080`，Flutter 預設會連到此位址。
+
+### 1. 安裝依賴
+
+```bash
+flutter pub get
+```
+
+### 2. 連線正式後端（預設）
+
+```bash
+flutter run --dart-define=MOCK_MODE=false --dart-define=API_BASE_URL=http://168.138.210.65:8080
+```
+
+### 3. 切換 Mock 模式（不連後端）
+
+```bash
+flutter run --dart-define=MOCK_MODE=true
+```
+
+可用的 `dart-define` 參數：
+- `MOCK_MODE`: `true` / `false`
+- `API_BASE_URL`: 例如 `http://168.138.210.65:8080`
+
+---
+
 ## 目錄
 
 1. [技術對齊：後端 API 確認](#1-技術對齊後端-api-確認)

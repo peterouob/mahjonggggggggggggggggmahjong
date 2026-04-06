@@ -3,7 +3,10 @@ import 'package:http/http.dart' as http;
 import '../storage/session.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://localhost:8080';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://168.138.210.65:8080',
+  );
 
   static Map<String, String> get _headers {
     final headers = {'Content-Type': 'application/json'};

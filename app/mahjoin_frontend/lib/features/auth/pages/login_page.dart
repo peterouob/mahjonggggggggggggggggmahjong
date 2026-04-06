@@ -32,6 +32,39 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  String? _extractUserId(dynamic result) {
+    if (result is! Map) return null;
+    final user = result['user'];
+    if (user is Map) {
+      final nested = user['id'] as String? ??
+          user['userId'] as String? ??
+          user['user_id'] as String?;
+      if (nested != null && nested.trim().isNotEmpty) return nested;
+    }
+    final topLevel = result['user_id'] as String? ??
+        result['userId'] as String? ??
+        result['id'] as String?;
+    if (topLevel != null && topLevel.trim().isNotEmpty) return topLevel;
+    return null;
+  }
+
+  String _extractUserName(dynamic result, String fallback) {
+    if (result is! Map) return fallback;
+    final user = result['user'];
+    if (user is Map) {
+      final nested = user['displayName'] as String? ??
+          user['display_name'] as String? ??
+          user['username'] as String? ??
+          user['user_name'] as String?;
+      if (nested != null && nested.trim().isNotEmpty) return nested;
+    }
+    return result['displayName'] as String? ??
+        result['display_name'] as String? ??
+        result['username'] as String? ??
+        result['user_name'] as String? ??
+        fallback;
+  }
+
   Future<void> _submit() async {
     final username = _usernameCtrl.text.trim();
     final password = _passwordCtrl.text;
@@ -72,22 +105,20 @@ class _LoginPageState extends State<LoginPage> {
 
       final result = await ApiClient.post(path, body);
 
-      final userId = result['user_id'] as String? ??
-          result['userId'] as String? ??
-          result['id'] as String?;
-      final userName = result['username'] as String? ??
-          result['user_name'] as String? ??
-          username;
+      final userId = _extractUserId(result);
+      final userName = _extractUserName(result, username);
+
+      if (userId == null) {
+        throw const FormatException('Missing user id in auth response');
+      }
 
       Session.instance.userId = userId;
       Session.instance.userName = userName;
       await Session.instance.save();
 
       // Connect WebSocket and restore any active broadcast.
-      if (userId != null) {
-        WsClient.instance.connect(userId);
-        BroadcastService.instance.restore();
-      }
+      WsClient.instance.connect(userId);
+      BroadcastService.instance.restore();
       if (mounted) {
         setState(() => _loading = false);
         AppRouter.go(context, AppRoutes.map);

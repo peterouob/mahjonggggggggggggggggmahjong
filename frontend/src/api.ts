@@ -1,10 +1,16 @@
 import type { User, Broadcast, Room, FriendRequest } from './types'
 import { mockApi } from './mockApi'
 
-export const MOCK_MODE = true
+const env = import.meta.env
 
-const API_BASE = 'http://localhost:8080/api/v1'
-export const WS_URL = (userId: string) => `ws://localhost:8080/ws?user_id=${userId}`
+export const MOCK_MODE = env.VITE_MOCK_MODE === 'true'
+
+const RAW_API_BASE = env.VITE_API_BASE_URL || 'http://168.138.210.65:8080'
+const API_BASE = `${RAW_API_BASE.replace(/\/$/, '')}/api/v1`
+
+const RAW_WS_BASE = env.VITE_WS_BASE_URL || RAW_API_BASE.replace(/^http/, 'ws')
+const WS_BASE = RAW_WS_BASE.replace(/\/$/, '')
+export const WS_URL = (userId: string) => `${WS_BASE}/ws?user_id=${encodeURIComponent(userId)}`
 
 function headers(): HeadersInit {
   const userId = localStorage.getItem('userId') || ''
