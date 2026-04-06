@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"mahjong/internal/domain"
-	"mahjong/internal/repository"
-	"mahjong/pkg/apierror"
-	"mahjong/pkg/cache"
-	"mahjong/pkg/utils"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/domain"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/repository"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/apierror"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/cache"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/utils"
 )
 
 const broadcastRadius = 5.0        // km – fixed MVP radius
@@ -16,14 +16,14 @@ const locationThresholdM = 50.0    // minimum movement to trigger an update even
 const broadcastTTL = 10 * time.Minute
 
 type BroadcastService struct {
-	broadcastRepo *repository.BroadcastRepository
+	broadcastRepo repository.BroadcastRepo
 	userRepo      repository.UserRepo
 	rdb           *cache.Redis
 	notify        *NotificationService
 }
 
 func NewBroadcastService(
-	broadcastRepo *repository.BroadcastRepository,
+	broadcastRepo repository.BroadcastRepo,
 	userRepo repository.UserRepo,
 	rdb *cache.Redis,
 	notify *NotificationService,

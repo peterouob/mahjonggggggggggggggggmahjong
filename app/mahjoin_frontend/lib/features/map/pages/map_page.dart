@@ -114,10 +114,11 @@ class _MapPageState extends State<MapPage> {
     }
 
     try {
+      // Backend reads lat/lng and radius_km (in km, not metres).
       final params = {
         'lat': '${_myLocation.latitude}',
         'lng': '${_myLocation.longitude}',
-        'radius': '$_nearbyRadiusM',
+        'radius_km': '${_nearbyRadiusM / 1000}',
       };
       final results = await Future.wait([
         ApiClient.get('/api/v1/broadcasts/nearby', params: params),
@@ -126,10 +127,13 @@ class _MapPageState extends State<MapPage> {
 
       if (!mounted) return;
       setState(() {
-        _players = (results[0] as List)
+        // Backend wraps lists: {"broadcasts": [...]} and {"rooms": [...]}
+        final broadcastsRaw = (results[0] as Map<String, dynamic>)['broadcasts'] as List<dynamic>? ?? [];
+        final roomsRaw = (results[1] as Map<String, dynamic>)['rooms'] as List<dynamic>? ?? [];
+        _players = broadcastsRaw
             .map((j) => Broadcast.fromJson(j as Map<String, dynamic>))
             .toList();
-        _rooms = (results[1] as List)
+        _rooms = roomsRaw
             .map((j) => Room.fromJson(j as Map<String, dynamic>))
             .toList();
         _loading = false;
@@ -219,8 +223,9 @@ class _MapPageState extends State<MapPage> {
 
   void _handleWsMessage(WsMessage msg) {
     if (!mounted) return;
+    // Backend uses dot-notation event types: broadcast.started, room.created, etc.
     switch (msg.type) {
-      case 'broadcast_started':
+      case 'broadcast.started':
         final b = Broadcast.fromJson(msg.data);
         setState(() {
           _players = [
@@ -228,33 +233,38 @@ class _MapPageState extends State<MapPage> {
             b,
           ];
         });
-      case 'broadcast_stopped':
-        final id = msg.data['id'] as String?;
+      case 'broadcast.stopped':
+        final id = msg.data['broadcastId'] as String?;
         if (id != null) {
           setState(() => _players = _players.where((p) => p.id != id).toList());
         }
-      case 'broadcast_location_updated':
-        final id = msg.data['id'] as String?;
+      case 'broadcast.updated':
+        final id = msg.data['broadcastId'] as String?;
         if (id != null) {
           final updated = Broadcast.fromJson(msg.data);
           setState(() {
             _players = _players.map((p) => p.id == id ? updated : p).toList();
           });
         }
-      case 'room_created':
-      case 'room_updated':
-        final r = Room.fromJson(msg.data);
-        setState(() {
-          _rooms = [
-            ..._rooms.where((x) => x.id != r.id),
-            r,
-          ];
-        });
-      case 'room_dissolved':
-        final id = msg.data['id'] as String?;
-        if (id != null) {
-          setState(() => _rooms = _rooms.where((r) => r.id != id).toList());
-          if (_selectedRoom?.id == id) {
+      case 'room.created':
+      case 'room.player_joined':
+      case 'room.player_left':
+      case 'room.full':
+        final roomData = msg.data['room'] as Map<String, dynamic>?;
+        if (roomData != null) {
+          final r = Room.fromJson(roomData);
+          setState(() {
+            _rooms = [
+              ..._rooms.where((x) => x.id != r.id),
+              r,
+            ];
+          });
+        }
+      case 'room.dissolved':
+        final roomId = msg.data['roomId'] as String?;
+        if (roomId != null) {
+          setState(() => _rooms = _rooms.where((r) => r.id != roomId).toList());
+          if (_selectedRoom?.id == roomId) {
             setState(() => _selectedRoom = null);
           }
         }

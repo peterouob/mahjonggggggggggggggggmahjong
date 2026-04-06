@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	"mahjong/internal/service"
-	"mahjong/pkg/apierror"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/service"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/apierror"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +19,10 @@ func NewAuthHandler(authSvc *service.AuthService) *AuthHandler {
 
 func (h *AuthHandler) Register(c *gin.Context) {
 	var in service.RegisterInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		respondError(c, apierror.BadRequest(apierror.CodeValidationError, err.Error()))
+		return
+	}
 	user, err := h.authSvc.Register(c.Request.Context(), in)
 	if err != nil {
 		respondError(c, err)

@@ -4,25 +4,25 @@ import (
 	"context"
 	"time"
 
-	"mahjong/internal/domain"
-	"mahjong/internal/repository"
-	"mahjong/pkg/apierror"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/domain"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/repository"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/apierror"
 )
 
 const maxFriends = 200
 
 type RoomService struct {
-	roomRepo      *repository.RoomRepository
-	userRepo      repository.UserRepo
-	socialRepo    *repository.SocialRepository
-	broadcastSvc  *BroadcastService
-	notify        *NotificationService
+	roomRepo     repository.RoomRepo
+	userRepo     repository.UserRepo
+	socialRepo   repository.SocialRepo
+	broadcastSvc *BroadcastService
+	notify       *NotificationService
 }
 
 func NewRoomService(
-	roomRepo *repository.RoomRepository,
+	roomRepo repository.RoomRepo,
 	userRepo repository.UserRepo,
-	socialRepo *repository.SocialRepository,
+	socialRepo repository.SocialRepo,
 	broadcastSvc *BroadcastService,
 	notify *NotificationService,
 ) *RoomService {

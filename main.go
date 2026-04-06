@@ -10,14 +10,14 @@ import (
 	"syscall"
 	"time"
 
-	"mahjong/internal/config"
-	"mahjong/internal/handler"
-	"mahjong/internal/hub"
-	"mahjong/internal/repository"
-	"mahjong/internal/router"
-	"mahjong/internal/service"
-	"mahjong/pkg/cache"
-	"mahjong/pkg/database"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/config"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/handler"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/hub"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/repository"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/router"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/service"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/cache"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/database"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,16 +42,26 @@ func main() {
 	}
 
 	// ── Repositories ───────────────────────────────────────────────────────────
-	var userRepo repository.UserRepo
+	var (
+		userRepo      repository.UserRepo
+		broadcastRepo repository.BroadcastRepo
+		roomRepo      repository.RoomRepo
+		socialRepo    repository.SocialRepo
+	)
 	if os.Getenv("MOCK_USERS") == "true" {
+		log.Println("⚠️  MOCK_USERS=true — using in-memory repositories (no DB required)")
+		log.Println("    Mock users: alice / bob / charlie / dave / eve")
+		log.Println("    Auth: POST /auth/login with username + \"mock-password\", or set X-User-ID header directly")
 		userRepo = repository.NewMockUserRepository()
-		log.Println("⚠️  MOCK_USERS=true — using in-memory users (user-1 … user-5)")
+		broadcastRepo = repository.NewMockBroadcastRepository()
+		roomRepo = repository.NewMockRoomRepository()
+		socialRepo = repository.NewMockSocialRepository()
 	} else {
 		userRepo = repository.NewUserRepository(db)
+		broadcastRepo = repository.NewBroadcastRepository(db)
+		roomRepo = repository.NewRoomRepository(db)
+		socialRepo = repository.NewSocialRepository(db)
 	}
-	broadcastRepo := repository.NewBroadcastRepository(db)
-	roomRepo := repository.NewRoomRepository(db)
-	socialRepo := repository.NewSocialRepository(db)
 
 	// ── Services ───────────────────────────────────────────────────────────────
 	notifySvc := service.NewNotificationService(rdb)
@@ -70,7 +80,7 @@ func main() {
 	authH := handler.NewAuthHandler(authSvc)
 	broadcastH := handler.NewBroadcastHandler(broadcastSvc)
 	roomH := handler.NewRoomHandler(roomSvc)
-	socialH := handler.NewSocialHandler(socialSvc)
+	socialH := handler.NewSocialHandler(socialSvc, userRepo)
 	wsH := handler.NewWSHandler(wsHub)
 
 	engine := router.Setup(rdb, authH, broadcastH, roomH, socialH, wsH)
