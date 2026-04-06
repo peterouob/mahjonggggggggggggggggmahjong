@@ -2,20 +2,31 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
-	"mahjong/internal/middleware"
-	"mahjong/internal/service"
-	"mahjong/pkg/apierror"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/middleware"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/repository"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/service"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/apierror"
 
 	"github.com/gin-gonic/gin"
 )
 
-type SocialHandler struct {
-	socialSvc *service.SocialService
+type pendingRequestView struct {
+	ID              string    `json:"id"`
+	FromUserID      string    `json:"fromUserId"`
+	FromUsername    string    `json:"fromUsername"`
+	FromDisplayName string    `json:"fromDisplayName"`
+	CreatedAt       time.Time `json:"createdAt"`
 }
 
-func NewSocialHandler(socialSvc *service.SocialService) *SocialHandler {
-	return &SocialHandler{socialSvc: socialSvc}
+type SocialHandler struct {
+	socialSvc *service.SocialService
+	userRepo  repository.UserRepo
+}
+
+func NewSocialHandler(socialSvc *service.SocialService, userRepo repository.UserRepo) *SocialHandler {
+	return &SocialHandler{socialSvc: socialSvc, userRepo: userRepo}
 }
 
 // GET /api/v1/friends
@@ -31,6 +42,7 @@ func (h *SocialHandler) ListFriends(c *gin.Context) {
 }
 
 // GET /api/v1/friends/requests
+// Returns pending requests enriched with sender info.
 func (h *SocialHandler) ListPendingRequests(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -39,22 +51,53 @@ func (h *SocialHandler) ListPendingRequests(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"requests": requests})
+
+	views := make([]pendingRequestView, 0, len(requests))
+	for _, f := range requests {
+		sender, _ := h.userRepo.GetByID(c.Request.Context(), f.InitiatorID)
+		v := pendingRequestView{
+			ID:         f.ID,
+			FromUserID: f.InitiatorID,
+			CreatedAt:  f.CreatedAt,
+		}
+		if sender != nil {
+			v.FromUsername = sender.Username
+			v.FromDisplayName = sender.DisplayName
+		}
+		views = append(views, v)
+	}
+	c.JSON(http.StatusOK, gin.H{"requests": views})
 }
 
 // POST /api/v1/friends/requests
+// Accepts either {"toId": "<uuid>"} or {"toUsername": "<username>"}.
 func (h *SocialHandler) SendRequest(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
 	var body struct {
-		ToID string `json:"toId" binding:"required"`
+		ToID       string `json:"toId"`
+		ToUsername string `json:"toUsername"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		respondError(c, apierror.BadRequest(apierror.CodeValidationError, err.Error()))
 		return
 	}
 
-	if err := h.socialSvc.SendFriendRequest(c.Request.Context(), userID, body.ToID); err != nil {
+	toID := body.ToID
+	if toID == "" && body.ToUsername != "" {
+		target, err := h.userRepo.GetByUsername(c.Request.Context(), body.ToUsername)
+		if err != nil || target == nil {
+			respondError(c, apierror.NotFound("User not found"))
+			return
+		}
+		toID = target.ID
+	}
+	if toID == "" {
+		respondError(c, apierror.BadRequest(apierror.CodeValidationError, "toId or toUsername is required"))
+		return
+	}
+
+	if err := h.socialSvc.SendFriendRequest(c.Request.Context(), userID, toID); err != nil {
 		respondError(c, err)
 		return
 	}

@@ -3,21 +3,21 @@ package service
 import (
 	"context"
 
-	"mahjong/internal/domain"
-	"mahjong/internal/repository"
-	"mahjong/pkg/apierror"
-	"mahjong/pkg/cache"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/domain"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/repository"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/apierror"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/cache"
 )
 
 type SocialService struct {
-	socialRepo *repository.SocialRepository
+	socialRepo repository.SocialRepo
 	userRepo   repository.UserRepo
 	rdb        *cache.Redis
 	notify     *NotificationService
 }
 
 func NewSocialService(
-	socialRepo *repository.SocialRepository,
+	socialRepo repository.SocialRepo,
 	userRepo repository.UserRepo,
 	rdb *cache.Redis,
 	notify *NotificationService,

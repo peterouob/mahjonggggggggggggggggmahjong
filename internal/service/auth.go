@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"mahjong/internal/domain"
-	"mahjong/internal/repository"
-	"mahjong/pkg/apierror"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/domain"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/internal/repository"
+	"github.com/peterouob/mahjonggggggggggggggggmahjong/pkg/apierror"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -32,14 +32,20 @@ type LoginInput struct {
 }
 
 func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*domain.User, error) {
+	if existing, _ := s.userRepo.GetByUsername(ctx, in.Username); existing != nil {
+		return nil, apierror.Conflict(apierror.CodeValidationError, "Username already taken")
+	}
+	if existing, _ := s.userRepo.GetByEmail(ctx, in.Email); existing != nil {
+		return nil, apierror.Conflict(apierror.CodeValidationError, "Email already registered")
+	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, apierror.Internal()
 	}
 
 	user := &domain.User{
-		Username:     "peter",
+		Username:     in.Username,
 		Email:        in.Email,
 		PasswordHash: string(hash),
 		DisplayName:  in.DisplayName,
