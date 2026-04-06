@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(go list:*)",
+      "Bash(grep:*)",
+      "Bash(chmod +x /tmp/analyze.sh)",
+      "Bash(/tmp/analyze.sh)",
+      "Bash(go build:*)",
+      "Bash(cat /Users/peter/Developer/mahjong/app/mahjoin_frontend/lib/features/auth/pages/*.dart)",
+      "Bash(cat /Users/peter/Developer/mahjong/app/mahjoin_frontend/lib/features/friends/pages/*.dart)",
+      "Bash(cat /Users/peter/Developer/mahjong/app/mahjoin_frontend/lib/features/profile/pages/*.dart)"
+    ]
+  }
+}

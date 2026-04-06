@@ -1,0 +1,49 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "mahjong"
+    ports:
+      - "3306:3306"
+    networks:
+      - my_bridge
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    # KEA = Keyspace Events: K=keyspace, E=keyevent, A=all commands
+    # Needed for broadcast TTL expiry notifications
+    command: redis-server --notify-keyspace-events KEA
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my_bridge
+
+#  app:
+#    build: .
+#    ports:
+#      - "8080:8080"
+#    env_file:
+#      - .env
+#    depends_on:
+#      mysql:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  my_bridge:
+    driver: bridge

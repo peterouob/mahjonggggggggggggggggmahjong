@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 /Users/peter/.claude/skills/ui-ux-pro-max/scripts/search.py \"mahjong social map real-time mobile gaming community\" --design-system -p \"MahJoin\")",
+      "Bash(python3 /Users/peter/.claude/skills/ui-ux-pro-max/scripts/search.py \"map location gaming social\" --stack flutter)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(python3 /Users/peter/.claude/skills/ui-ux-pro-max/scripts/search.py \"flutter mobile layout overflow\" --domain ux -n 5)",
+      "Bash(python3 /Users/peter/.claude/skills/ui-ux-pro-max/scripts/search.py \"flutter layout overflow scroll\" --stack flutter -n 5)"
+    ]
+  }
+}

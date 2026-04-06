@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>麻將 Backend Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0F172A; --card: #1E293B; --card2: #162032;
+      --border: #334155; --border2: #1e2f46;
+      --accent: #22C55E; --accent-dim: rgba(34,197,94,.12);
+      --text: #F8FAFC; --muted: #94A3B8; --dim: #475569;
+      --red: #EF4444; --yellow: #F59E0B; --blue: #3B82F6; --purple: #A855F7;
+      --ui: 'IBM Plex Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+    html, body, #root { height: 100%; }
+    body { background: var(--bg); color: var(--text); font-family: var(--ui); font-size: 14px; line-height: 1.5; }
+
+    /* scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* layout */
+    .app { display: flex; flex-direction: column; height: 100%; }
+
+    /* header */
+    .hdr {
+      flex-shrink: 0;
+      background: rgba(15,23,42,.97); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .logo { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; white-space: nowrap; }
+    .logo-dot { color: var(--accent); }
+    .hdr-field { display: flex; align-items: center; gap: 6px; }
+    .hdr-label { font-size: 11px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+    .hdr-input {
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+      padding: 5px 10px; color: var(--text); font-family: var(--mono); font-size: 12px;
+      outline: none; transition: border-color .15s; width: 200px;
+    }
+    .hdr-input:focus { border-color: var(--accent); }
+    .uid-input { width: 280px; }
+
+    /* chips */
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 100px; font-size: 11px;
+      font-family: var(--mono); border: 1px solid var(--border);
+      background: var(--card); color: var(--muted); transition: all .2s;
+    }
+    .chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .chip.err { border-color: var(--red); color: #F87171; background: rgba(239,68,68,.1); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* tabs */
+    .tabs {
+      flex-shrink: 0; display: flex;
+      border-bottom: 1px solid var(--border); padding: 0 20px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      padding: 11px 16px; font-size: 13px; font-weight: 500;
+      color: var(--muted); cursor: pointer; white-space: nowrap;
+      border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-n {
+      display: inline-block; font-size: 10px; padding: 1px 5px;
+      border-radius: 100px; background: rgba(51,65,85,.8);
+      color: var(--muted); margin-left: 5px;
+    }
+
+    /* main scroll area */
+    .body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    /* grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; }
+
+    /* cards */
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; transition: border-color .15s;
+    }
+    .card:hover { border-color: var(--dim); }
+    .card-head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 14px; border-bottom: 1px solid var(--border);
+    }
+    .card-path { font-family: var(--mono); font-size: 12px; flex: 1; }
+    .card-body { padding: 12px 14px; }
+    .card-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.45; }
+    .card-foot { padding: 0 14px 14px; display: flex; align-items: center; gap: 8px; }
+
+    /* method badges */
+    .badge { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: .4px; }
+    .b-get    { background: rgba(59,130,246,.15);  color: #60A5FA; }
+    .b-post   { background: rgba(34,197,94,.15);   color: #4ADE80; }
+    .b-patch  { background: rgba(245,158,11,.15);  color: #FCD34D; }
+    .b-delete { background: rgba(239,68,68,.15);   color: #F87171; }
+    .b-put    { background: rgba(168,85,247,.15);  color: #C084FC; }
+    .b-ws     { background: rgba(251,191,36,.15);  color: #FDE68A; }
+
+    /* form */
+    .fg { margin-bottom: 8px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; font-family: var(--mono); }
+    .fi {
+      width: 100%; background: var(--card2); border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 10px; color: var(--text); font-family: var(--mono); font-size: 12px;
+      outline: none; transition: border-color .15s;
+    }
+    .fi:focus { border-color: var(--accent); }
+    .fi::placeholder { color: #2d3f5c; }
+    select.fi option { background: #1E293B; }
+    .hint { font-size: 10.5px; color: #2d3f5c; font-family: var(--mono); margin-top: 3px; }
+
+    /* buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+      cursor: pointer; border: none; font-family: var(--ui);
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-green  { background: var(--accent); color: #052e16; font-weight: 600; }
+    .btn-green:hover:not(:disabled) { opacity: .85; }
+    .btn-muted  { background: #1a2d47; color: var(--text); border: 1px solid var(--border); }
+    .btn-muted:hover { background: #1e3455; }
+    .btn-red    { background: rgba(239,68,68,.15); color: #F87171; border: 1px solid rgba(239,68,68,.2); }
+    .btn-red:hover { background: rgba(239,68,68,.25); }
+
+    /* response */
+    .resp { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .resp-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .sbadge { font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .s2 { background: rgba(34,197,94,.15); color: #4ADE80; }
+    .s4 { background: rgba(239,68,68,.15); color: #F87171; }
+    .s5 { background: rgba(245,158,11,.15); color: #FCD34D; }
+    .se { background: rgba(148,163,184,.1); color: var(--muted); }
+    .resp-ms { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    pre.json {
+      background: #06090f; border: 1px solid var(--border2);
+      border-radius: 6px; padding: 10px 12px; font-family: var(--mono);
+      font-size: 11px; line-height: 1.6; overflow: auto; max-height: 220px; white-space: pre;
+    }
+    .jk { color: #7DD3FC; } .js { color: #86EFAC; }
+    .jn { color: #FCA5A5; } .jb { color: #C084FC; } .jx { color: #3d5268; }
+
+    /* section heading */
+    .sec-hd { margin-bottom: 16px; }
+    .sec-hd h2 { font-size: 17px; font-weight: 600; margin-bottom: 3px; }
+    .sec-hd p { color: var(--muted); font-size: 13px; }
+
+    /* alert */
+    .alert {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 10px 14px; border-radius: 8px; font-size: 12.5px; margin-bottom: 16px;
+      border: 1px solid rgba(245,158,11,.3); background: rgba(245,158,11,.07); color: #FCD34D;
+    }
+    .alert code { font-family: var(--mono); font-size: 11px; background: rgba(0,0,0,.3); padding: 1px 5px; border-radius: 3px; }
+
+    /* websocket */
+    .ws-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+    .ws-col { display: flex; flex-direction: column; gap: 14px; }
+    .ws-feed { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .ws-feed-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 600;
+    }
+    .ws-ind { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 11px; }
+    .ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+    .ws-dot.on  { background: var(--accent); animation: blink 1.8s infinite; }
+    .ws-dot.err { background: var(--red); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    #ws-feed-body { height: 420px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .wm { padding: 7px 10px; border-radius: 6px; font-family: var(--mono); font-size: 11px; line-height: 1.5; }
+    .wm-type { font-size: 10px; font-weight: 700; margin-bottom: 2px; letter-spacing: .4px; }
+    .wm-ts { color: #2d3f5c; font-weight: 400; }
+    .wm-in  { background: rgba(59,130,246,.07); border: 1px solid rgba(59,130,246,.18); }
+    .wm-in  .wm-type { color: #60A5FA; }
+    .wm-out { background: rgba(34,197,94,.06); border: 1px solid rgba(34,197,94,.18); text-align: right; }
+    .wm-out .wm-type { color: #4ADE80; }
+    .wm-sys { background: rgba(148,163,184,.05); border: 1px solid var(--border2); color: var(--muted); }
+    .wm-sys .wm-type { color: var(--dim); }
+    .wm-err { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); color: #F87171; }
+    .wm pre { white-space: pre-wrap; word-break: break-all; }
+
+    /* event ref */
+    .evt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin-top: 16px; }
+    .evt-card { background: #111d30; border: 1px solid var(--border2); border-radius: 8px; padding: 9px 12px; }
+    .evt-type { font-family: var(--mono); font-weight: 700; color: #7DD3FC; font-size: 11px; margin-bottom: 3px; }
+    .evt-desc { font-size: 11px; color: var(--muted); }
+
+    /* log */
+    .log-bar {
+      flex-shrink: 0; background: #06090f; border-top: 1px solid var(--border);
+    }
+    .log-toggle {
+      padding: 6px 20px; display: flex; align-items: center; gap: 8px;
+      cursor: pointer; font-size: 12px; color: var(--muted); user-select: none;
+    }
+    .log-toggle:hover { color: var(--text); }
+    .log-n { background: #1a2540; border-radius: 100px; padding: 1px 7px; font-size: 11px; font-family: var(--mono); }
+    .log-body-wrap { overflow: hidden; transition: max-height .25s ease; }
+    .log-body { height: 140px; overflow-y: auto; padding: 6px 20px; }
+    .log-row {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 3px 0; border-bottom: 1px solid rgba(30,41,59,.5);
+      font-family: var(--mono); font-size: 11px;
+    }
+    .l-ts { color: #1e2f46; white-space: nowrap; }
+    .l-m  { font-weight: 700; width: 54px; }
+    .l-p  { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .l-s  { width: 36px; font-weight: 600; }
+    .l-ms { color: #1e2f46; white-space: nowrap; }
+
+    @media (max-width: 760px) {
+      .ws-layout { grid-template-columns: 1fr; }
+      .grid       { grid-template-columns: 1fr; }
+      .uid-input  { width: 180px; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function hl(obj) {
+  return JSON.stringify(obj, null, 2)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, m => {
+      if (/^"/.test(m)) return /:$/.test(m) ? `<span class="jk">${m}</span>` : `<span class="js">${m}</span>`;
+      if (/true|false/.test(m)) return `<span class="jb">${m}</span>`;
+      if (/null/.test(m))  return `<span class="jx">${m}</span>`;
+      return `<span class="jn">${m}</span>`;
+    });
+}
+
+function statusClass(s) {
+  if (!s) return 'se';
+  if (s >= 500) return 's5';
+  if (s >= 400) return 's4';
+  return 's2';
+}
+
+const METHOD_COLORS = { GET:'#60A5FA', POST:'#4ADE80', PATCH:'#FCD34D', DELETE:'#F87171', PUT:'#C084FC', WS:'#FDE68A' };
+
+// ── Response box ─────────────────────────────────────────────────────────────
+
+function Resp({ result }) {
+  if (!result) return null;
+  const { status, data, ms } = result;
+  return (
+    <div className="resp">
+      <div className="resp-meta">
+        <span className={`sbadge ${statusClass(status)}`}>{status || 'ERR'}</span>
+        <span className="resp-ms">{ms}ms</span>
+      </div>
+      <pre className="json" dangerouslySetInnerHTML={{ __html: hl(data) }} />
+    </div>
+  );
+}
+
+// ── Card ─────────────────────────────────────────────────────────────────────
+
+function Card({ method, path, desc, children, onRun, runLabel = 'Run', runClass = 'btn-green', runIcon, extra }) {
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  async function run() {
+    setLoading(true);
+    const r = await onRun();
+    setResult(r);
+    setLoading(false);
+  }
+
+  return (
+    <div className="card">
+      <div className="card-head">
+        <span className={`badge b-${method.toLowerCase()}`}>{method}</span>
+        <span className="card-path">{path}</span>
+      </div>
+      <div className="card-body">
+        <div className="card-desc">{desc}</div>
+        {children}
+        {result && <Resp result={result} />}
+      </div>
+      <div className="card-foot">
+        <button className={`btn ${runClass}`} onClick={run} disabled={loading}>
+          {loading ? <span>…</span> : (runIcon || <ArrowIcon />)}
+          {runLabel}
+        </button>
+        {extra}
+      </div>
+    </div>
+  );
+}
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+
+const ArrowIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <path d="M5 12h14M12 5l7 7-7 7"/>
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+  </svg>
+);
+
+const LeaveIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+  </svg>
+);
+
+const BlockIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+  </svg>
+);
+
+// ── Field helpers ─────────────────────────────────────────────────────────────
+
+function Field({ label, ...props }) {
+  return (
+    <div className="fg">
+      <label>{label}</label>
+      <input className="fi" {...props} />
+    </div>
+  );
+}
+
+function FieldRow({ children }) {
+  return <div className="row2">{children}</div>;
+}
+
+function Select({ label, children, ...props }) {
+  return (
+    <div className="fg">
+      <label>{label}</label>
+      <select className="fi" {...props}>{children}</select>
+    </div>
+  );
+}
+
+// ── App state & API ───────────────────────────────────────────────────────────
+
+function App() {
+  const [baseUrl, setBaseUrl] = useState('http://localhost:8080');
+  const [userId, setUserId] = useState('');
+  const [bcId, setBcId] = useState('');
+  const [roomId, setRoomId] = useState('');
+  const [tab, setTab] = useState('auth');
+  const [logOpen, setLogOpen] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const wsRef = useRef(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [wsMessages, setWsMessages] = useState([
+    { dir: 'sys', type: 'SYSTEM', body: 'Connect to start receiving events. Flow: Register → Connect → Start Broadcast → Update Location.' }
+  ]);
+  const feedRef = useRef(null);
+
+  const addLog = useCallback((method, path, status, ms) => {
+    const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
+    setLogs(prev => [...prev.slice(-199), { ts, method, path, status, ms }]);
+  }, []);
+
+  const api = useCallback(async (method, path, body = null) => {
+    const hdrs = { 'Content-Type': 'application/json' };
+    if (userId) hdrs['X-User-ID'] = userId;
+    const t0 = Date.now();
+    let status = 0, data = {};
+    try {
+      const r = await fetch(baseUrl.replace(/\/$/, '') + path, {
+        method, headers: hdrs,
+        ...(body !== null ? { body: JSON.stringify(body) } : {}),
+      });
+      status = r.status;
+      data = await r.json().catch(() => ({}));
+    } catch (e) {
+      data = { error: { code: 'NETWORK_ERROR', message: e.message } };
+    }
+    const ms = Date.now() - t0;
+    addLog(method, path, status, ms);
+    return { status, data, ms };
+  }, [baseUrl, userId, addLog]);
+
+  // auto-scroll feed
+  useEffect(() => {
+    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
+  }, [wsMessages]);
+
+  function addWsMsg(dir, type, body) {
+    const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
+    setWsMessages(prev => [...prev.slice(-299), { dir, type, body, ts }]);
+  }
+
+  function wsConnect(wsUserId) {
+    const uid = wsUserId || userId;
+    if (!uid) { addWsMsg('err', 'ERROR', 'Set a User ID first (header bar above)'); return; }
+    const url = baseUrl.replace(/^http/, 'ws').replace(/\/$/, '') + `/ws?user_id=${uid}`;
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setWsConnected(true);
+      addWsMsg('sys', 'SYSTEM', `Connected → ${url}`);
+      addLog('WS', '/ws', 101, 0);
+    };
+    ws.onmessage = evt => {
+      try {
+        const msg = JSON.parse(evt.data);
+        addWsMsg('in', (msg.type || 'message').toUpperCase(), msg.data ?? msg);
+      } catch { addWsMsg('in', 'RAW', evt.data); }
+    };
+    ws.onclose = evt => {
+      setWsConnected(false);
+      wsRef.current = null;
+      addWsMsg('sys', 'SYSTEM', `Disconnected (code ${evt.code})`);
+    };
+    ws.onerror = () => addWsMsg('err', 'ERROR', 'Connection failed — is the server running?');
+  }
+
+  function wsDisconnect() { wsRef.current?.close(); }
+
+  function wsSend(payload) {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      addWsMsg('err', 'ERROR', 'Not connected'); return;
+    }
+    wsRef.current.send(JSON.stringify(payload));
+    addWsMsg('out', payload.type?.toUpperCase() || 'SEND', payload);
+  }
+
+  const tabs = [
+    { id: 'auth',    label: 'Auth',             n: '2' },
+    { id: 'bc',      label: 'Broadcasts',        n: '6' },
+    { id: 'rooms',   label: 'Rooms',             n: '7' },
+    { id: 'friends', label: 'Friends & Social',  n: '8' },
+    { id: 'ws',      label: 'WebSocket',         n: 'live' },
+  ];
+
+  return (
+    <div className="app">
+      {/* ── Header ── */}
+      <header className="hdr">
+        <div className="logo">
+          <TileIcon /> 麻將 <span className="logo-dot">API</span> Console
+        </div>
+        <div className="hdr-field">
+          <span className="hdr-label">BASE</span>
+          <input className="hdr-input" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} />
+        </div>
+        <div className="hdr-field">
+          <span className="hdr-label">USER ID</span>
+          <input
+            className="hdr-input uid-input"
+            value={userId}
+            onChange={e => setUserId(e.target.value)}
+            placeholder="Register → paste user.id here"
+            style={{ fontFamily: 'var(--mono)', fontSize: 11 }}
+          />
+        </div>
+        <div className="chips" style={{ marginLeft: 0 }}>
+          <div className={`chip ${bcId ? 'on' : ''}`}>
+            <span className="dot" />
+            {bcId ? `BC: ${bcId.slice(0,8)}…` : 'No broadcast'}
+          </div>
+          <div className={`chip ${roomId ? 'on' : ''}`}>
+            <span className="dot" />
+            {roomId ? `Room: ${roomId.slice(0,8)}…` : 'No room'}
+          </div>
+          <div className={`chip ${wsConnected ? 'on' : ''}`}>
+            <span className="dot" />
+            {wsConnected ? 'WS connected' : 'WS off'}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Tabs ── */}
+      <nav className="tabs">
+        {tabs.map(t => (
+          <div
+            key={t.id}
+            className={`tab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}<span className="tab-n">{t.n}</span>
+          </div>
+        ))}
+      </nav>
+
+      {/* ── Body ── */}
+      <div className="body">
+        {tab === 'auth'    && <AuthTab    api={api} onUserId={setUserId} />}
+        {tab === 'bc'      && <BcTab      api={api} bcId={bcId} setBcId={setBcId} />}
+        {tab === 'rooms'   && <RoomsTab   api={api} roomId={roomId} setRoomId={setRoomId} setBcId={setBcId} />}
+        {tab === 'friends' && <FriendsTab api={api} />}
+        {tab === 'ws'      && (
+          <WsTab
+            wsConnected={wsConnected}
+            wsMessages={wsMessages}
+            feedRef={feedRef}
+            userId={userId}
+            onConnect={wsConnect}
+            onDisconnect={wsDisconnect}
+            onSend={wsSend}
+            onClear={() => setWsMessages([])}
+          />
+        )}
+      </div>
+
+      {/* ── Log bar ── */}
+      <div className="log-bar">
+        <div className="log-toggle" onClick={() => setLogOpen(o => !o)}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points={logOpen ? '6 9 12 15 18 9' : '18 15 12 9 6 15'} />
+          </svg>
+          Activity Log
+          <span className="log-n">{logs.length}</span>
+          <span style={{ marginLeft: 'auto', fontSize: 11, opacity: .4 }}>click to {logOpen ? 'collapse' : 'expand'}</span>
+        </div>
+        {logOpen && (
+          <div className="log-body">
+            {logs.length === 0 && <div style={{ color: 'var(--muted)', fontSize: 12, padding: '8px 0' }}>No requests yet</div>}
+            {logs.map((l, i) => (
+              <div key={i} className="log-row">
+                <span className="l-ts">{l.ts}</span>
+                <span className="l-m" style={{ color: METHOD_COLORS[l.method] || 'var(--muted)' }}>{l.method}</span>
+                <span className="l-p">{l.path}</span>
+                <span className="l-s" style={{ color: l.status >= 500 ? '#FCD34D' : l.status >= 400 ? '#F87171' : l.status === 0 ? 'var(--muted)' : '#4ADE80' }}>{l.status || 'ERR'}</span>
+                <span className="l-ms">{l.ms}ms</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Auth tab ─────────────────────────────────────────────────────────────────
+
+function AuthTab({ api, onUserId }) {
+  const [username, setUsername] = useState('player1');
+  const [email, setEmail] = useState('player1@example.com');
+  const [password, setPassword] = useState('password123');
+  const [displayName, setDisplayName] = useState('Player One');
+
+  return (
+    <div>
+      <div className="sec-hd">
+        <h2>Auth</h2>
+        <p>
+          Register to get a user ID. Paste it into the <strong>USER ID</strong> field in the top bar — that's it, no tokens needed.
+        </p>
+      </div>
+      <div className="grid">
+
+        <Card method="POST" path="/api/v1/auth/register"
+          desc="Create a new account. Copy the user.id from the response and paste it into the USER ID field above."
+          onRun={async () => {
+            const r = await api('POST', '/api/v1/auth/register', { username, email, password, displayName });
+            if (r.status === 201 && r.data.user?.id) onUserId(r.data.user.id);
+            return r;
+          }}
+        >
+          <Field label="username" value={username} onChange={e => setUsername(e.target.value)} />
+          <Field label="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+          <Field label="password (min 8 chars)" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+          <Field label="displayName" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+        </Card>
+
+        <Card method="POST" path="/api/v1/auth/login"
+          desc="Login by username + password. Returns the user object (and legacy token fields). User ID is auto-set in the header bar on success."
+          onRun={async () => {
+            const r = await api('POST', '/api/v1/auth/login', { username, password });
+            if (r.status === 200 && r.data.user?.id) onUserId(r.data.user.id);
+            return r;
+          }}
+        >
+          <Field label="username" value={username} onChange={e => setUsername(e.target.value)} />
+          <Field label="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+        </Card>
+
+      </div>
+    </div>
+  );
+}
+
+// ── Broadcasts tab ────────────────────────────────────────────────────────────
+
+function BcTab({ api, bcId, setBcId }) {
+  const [lat, setLat] = useState('25.0330');
+  const [lng, setLng] = useState('121.5654');
+  const [msg, setMsg] = useState('Looking for players near Zhongzheng!');
+  const [nbLat, setNbLat] = useState('25.0330');
+  const [nbLng, setNbLng] = useState('121.5654');
+  const [nbR, setNbR]     = useState('5');
+  const [ulLat, setUlLat] = useState('25.0400');
+  const [ulLng, setUlLng] = useState('121.5700');
+  const [inputId, setInputId] = useState(bcId);
+
+  useEffect(() => setInputId(bcId), [bcId]);
+
+  return (
+    <div>
+      <div className="sec-hd">
+        <h2>Broadcasts</h2>
+        <p>One active broadcast per player. Location updates propagate to nearby connected clients via Redis GeoSearch + Pub/Sub.</p>
+      </div>
+      <div className="alert">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>
+          <strong>Age restriction:</strong> accounts must be &gt;24h old to broadcast.
+          Bypass for testing: <code>UPDATE users SET created_at = DATE_SUB(NOW(), INTERVAL 25 HOUR) WHERE id = 'your-user-id';</code>
+        </span>
+      </div>
+      <div className="grid">
+
+        <Card method="POST" path="/api/v1/broadcasts"
+          desc="Start a broadcast. Indexed in Redis GeoSet with a 10-min TTL. Broadcast ID auto-fills other cards. Rate: 5/min."
+          onRun={async () => {
+            const r = await api('POST', '/api/v1/broadcasts', { latitude: +lat, longitude: +lng, message: msg });
+            if (r.status === 201 && r.data.broadcast?.id) setBcId(r.data.broadcast.id);
+            return r;
+          }}
+        >
+          <FieldRow>
+            <Field label="latitude" value={lat} onChange={e => setLat(e.target.value)} />
+            <Field label="longitude" value={lng} onChange={e => setLng(e.target.value)} />
+          </FieldRow>
+          <Field label="message (optional, max 200)" value={msg} onChange={e => setMsg(e.target.value)} />
+        </Card>
+
+        <Card method="GET" path="/api/v1/broadcasts/nearby"
+          desc="Find active broadcasts within radius using Redis GeoSearch. Results include distanceMeters."
+          onRun={() => api('GET', `/api/v1/broadcasts/nearby?lat=${nbLat}&lng=${nbLng}&radius_km=${nbR}`)}
+        >
+          <FieldRow>
+            <Field label="lat" value={nbLat} onChange={e => setNbLat(e.target.value)} />
+            <Field label="lng" value={nbLng} onChange={e => setNbLng(e.target.value)} />
+          </FieldRow>
+          <Field label="radius_km (default 5)" value={nbR} onChange={e => setNbR(e.target.value)} />
+        </Card>
+
+        <Card method="GET" path="/api/v1/broadcasts/me"
+          desc="Get your own active broadcast. Returns 404 if none. Also refreshes the auto-filled broadcast ID."
+          onRun={async () => {
+            const r = await api('GET', '/api/v1/broadcasts/me');
+            if (r.status === 200 && r.data.broadcast?.id) setBcId(r.data.broadcast.id);
+            return r;
+          }}
+        />
+
+        <Card method="PATCH" path="/api/v1/broadcasts/:id/location"
+          desc="Update position. broadcast.updated WebSocket event fires only if moved ≥50m (Haversine check). Rate: 60/min."
+          onRun={() => api('PATCH', `/api/v1/broadcasts/${inputId}/location`, { latitude: +ulLat, longitude: +ulLng })}
+        >
+          <Field label="broadcast ID (auto-filled)" value={inputId} onChange={e => setInputId(e.target.value)} placeholder="Auto-filled after Start" />
+          <FieldRow>
+            <Field label="latitude" value={ulLat} onChange={e => setUlLat(e.target.value)} />
+            <Field label="longitude" value={ulLng} onChange={e => setUlLng(e.target.value)} />
+          </FieldRow>
+          <div className="hint">Default coords ~800m from start → triggers broadcast.updated WS event</div>
+        </Card>
+
+        <Card method="POST" path="/api/v1/broadcasts/:id/heartbeat"
+          desc="Extend broadcast TTL by 10 min. Call every ~5 min to keep the broadcast alive. Rate: 20/min."
+          onRun={() => api('POST', `/api/v1/broadcasts/${inputId}/heartbeat`)}
+        >
+          <Field label="broadcast ID (auto-filled)" value={inputId} onChange={e => setInputId(e.target.value)} placeholder="Auto-filled after Start" />
+        </Card>
+
+        <Card method="DELETE" path="/api/v1/broadcasts/:id"
+          desc="Stop your broadcast. Removes from Redis GeoSet and fires broadcast.stopped to nearby clients."
+          onRun={async () => {
+            const r = await api('DELETE', `/api/v1/broadcasts/${inputId}`);
+            if (r.status === 200) setBcId('');
+            return r;
+          }}
+          runLabel="Stop" runClass="btn-red" runIcon={<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}
+        >
+          <Field label="broadcast ID (auto-filled)" value={inputId} onChange={e => setInputId(e.target.value)} placeholder="Auto-filled after Start" />
+        </Card>
+
+      </div>
+    </div>
+  );
+}
+
+// ── Rooms tab ─────────────────────────────────────────────────────────────────
+
+function RoomsTab({ api, roomId, setRoomId, setBcId }) {
+  const [name, setName]       = useState('Friendly Game Room');
+  const [place, setPlace]     = useState('Taipei Station Area');
+  const [rule, setRule]       = useState('TAIWAN_MAHJONG');
+  const [pub, setPub]         = useState(true);
+  const [lat, setLat]         = useState('25.0330');
+  const [lng, setLng]         = useState('121.5654');
+  const [inputId, setInputId] = useState(roomId);
+
+  useEffect(() => setInputId(roomId), [roomId]);
+
+  return (
+    <div>
+      <div className="sec-hd">
+        <h2>Rooms</h2>
+        <p>State machine: WAITING → FULL → PLAYING → CLOSED. Max 4 players. Creating or joining auto-stops your broadcast.</p>
+      </div>
+      <div className="grid">
+
+        <Card method="POST" path="/api/v1/rooms"
+          desc="Create a room. You become host. Auto-stops your active broadcast. Rate: 3/min."
+          onRun={async () => {
+            const r = await api('POST', '/api/v1/rooms', { name, placeName: place, gameRule: rule, isPublic: pub, latitude: +lat, longitude: +lng });
+            if (r.status === 201 && r.data.room?.id) { setRoomId(r.data.room.id); setBcId(''); }
+            return r;
+          }}
+        >
+          <Field label="name" value={name} onChange={e => setName(e.target.value)} />
+          <Field label="placeName (optional)" value={place} onChange={e => setPlace(e.target.value)} />
+          <Select label="gameRule" value={rule} onChange={e => setRule(e.target.value)}>
+            <option>TAIWAN_MAHJONG</option>
+            <option>THREE_PLAYER</option>
+            <option>NATIONAL_STANDARD</option>
+          </Select>
+          <FieldRow>
+            <Field label="latitude" value={lat} onChange={e => setLat(e.target.value)} />
+            <Field label="longitude" value={lng} onChange={e => setLng(e.target.value)} />
+          </FieldRow>
+          <Select label="isPublic" value={pub} onChange={e => setPub(e.target.value === 'true')}>
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </Select>
+        </Card>
+
+        <Card method="GET" path="/api/v1/rooms/nearby"
+          desc="List all public rooms in WAITING state."
+          onRun={() => api('GET', '/api/v1/rooms/nearby')}
+        />
+
+        <Card method="GET" path="/api/v1/rooms/me"
+          desc="Get the room you are currently in. Returns 404 if not in any room."
+          onRun={async () => {
+            const r = await api('GET', '/api/v1/rooms/me');
+            if (r.status === 200 && r.data.room?.id) setRoomId(r.data.room.id);
+            return r;
+          }}
+        />
+
+        <Card method="GET" path="/api/v1/rooms/:id"
+          desc="Get room details. Coords are blurred ±150m in WAITING state (privacy). Exact once FULL/PLAYING."
+          onRun={() => api('GET', `/api/v1/rooms/${inputId}`)}
+        >
+          <Field label="room ID (auto-filled)" value={inputId} onChange={e => setInputId(e.target.value)} placeholder="Auto-filled after Create" />
+        </Card>
+
+        <Card method="POST" path="/api/v1/rooms/:id/join"
+          desc="Join a WAITING room. Auto-stops your broadcast. Fires room.player_joined; room.full on 4th join. Rate: 10/min."
+          onRun={async () => {
+            const r = await api('POST', `/api/v1/rooms/${inputId}/join`);
+            if (r.status === 200 && r.data.room?.id) { setRoomId(r.data.room.id); setBcId(''); }
+            return r;
+          }}
+        >
+          <Field label="room ID (auto-filled)" value={inputId} onChange={e => setInputId(e.target.value)} placeholder="Auto-filled after Create" />
+        </Card>
+
+        <Card method="POST" path="/api/v1/rooms/:id/leave"
+          desc="Leave the room. If host leaves, host transfers to the longest-seated remaining member."
+          onRun={async () => {
+            const r = await api('POST', `/api/v1/rooms/${inputId}/leave`);
+            if (r.status === 200) setRoomId('');
+            return r;
+          }}
+          runLabel="Leave" runClass="btn-muted" runIcon={<LeaveIcon />}
+        >
+          <Field label="room ID (auto-filled)" value={inputId} onChange={e => setInputId(e.target.value)} placeholder="Auto-filled after Create" />
+        </Card>
+
+        <Card method="DELETE" path="/api/v1/rooms/:id"
+          desc="Dissolve room (host only). Fires room.dissolved to all members. Non-host gets 403 FORBIDDEN."
+          onRun={async () => {
+            const r = await api('DELETE', `/api/v1/rooms/${inputId}`);
+            if (r.status === 200) setRoomId('');
+            return r;
+          }}
+          runLabel="Dissolve" runClass="btn-red" runIcon={<TrashIcon />}
+        >
+          <Field label="room ID (auto-filled)" value={inputId} onChange={e => setInputId(e.target.value)} placeholder="Auto-filled after Create" />
+        </Card>
+
+      </div>
+    </div>
+  );
+}
+
+// ── Friends tab ───────────────────────────────────────────────────────────────
+
+function FriendsTab({ api }) {
+  const [toId, setToId]       = useState('');
+  const [reqId, setReqId]     = useState('');
+  const [friendId, setFriend] = useState('');
+  const [targetId, setTarget] = useState('');
+
+  return (
+    <div>
+      <div className="sec-hd">
+        <h2>Friends &amp; Social</h2>
+        <p>Bidirectional normalized friendships. Max 200 friends. Friend list cached 10min, block list cached 1hr.</p>
+      </div>
+      <div className="grid">
+
+        <Card method="GET" path="/api/v1/friends"
+          desc="List accepted friends. Served from Redis cache (10min TTL)."
+          onRun={() => api('GET', '/api/v1/friends')}
+        />
+
+        <Card method="GET" path="/api/v1/friends/requests"
+          desc="List incoming pending friend requests. Copy a request ID to accept or reject below."
+          onRun={() => api('GET', '/api/v1/friends/requests')}
+        />
+
+        <Card method="POST" path="/api/v1/friends/requests"
+          desc="Send a friend request by target user UUID. Target receives friend.request WebSocket event. Rate: 20/hr."
+          onRun={() => api('POST', '/api/v1/friends/requests', { toId })}
+        >
+          <Field label="toId (target user UUID)" value={toId} onChange={e => setToId(e.target.value)} placeholder="Paste target user UUID" />
+          <div className="hint">Copy from a Register/Login response → user.id</div>
+        </Card>
+
+        <Card method="PUT" path="/api/v1/friends/requests/:id/accept"
+          desc="Accept an incoming friend request. Sender receives friend.accepted WebSocket event."
+          onRun={() => api('PUT', `/api/v1/friends/requests/${reqId}/accept`)}
+        >
+          <Field label="request ID" value={reqId} onChange={e => setReqId(e.target.value)} placeholder="From GET /friends/requests" />
+        </Card>
+
+        <Card method="PUT" path="/api/v1/friends/requests/:id/reject"
+          desc="Reject an incoming request."
+          onRun={() => api('PUT', `/api/v1/friends/requests/${reqId}/reject`)}
+          runLabel="Reject" runClass="btn-muted"
+          runIcon={<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
+        >
+          <Field label="request ID" value={reqId} onChange={e => setReqId(e.target.value)} placeholder="From GET /friends/requests" />
+        </Card>
+
+        <Card method="DELETE" path="/api/v1/friends/:id"
+          desc="Remove a friend. Invalidates both users' friend caches."
+          onRun={() => api('DELETE', `/api/v1/friends/${friendId}`)}
+          runLabel="Remove" runClass="btn-red" runIcon={<TrashIcon />}
+        >
+          <Field label="friend user UUID" value={friendId} onChange={e => setFriend(e.target.value)} placeholder="Friend's UUID" />
+        </Card>
+
+        <Card method="POST" path="/api/v1/users/:id/block"
+          desc="Block a user. Removes existing friendship. Blocked users cannot join your room. Cache: 1hr."
+          onRun={() => api('POST', `/api/v1/users/${targetId}/block`)}
+          runLabel="Block" runClass="btn-red" runIcon={<BlockIcon />}
+        >
+          <Field label="user UUID to block" value={targetId} onChange={e => setTarget(e.target.value)} placeholder="Target user UUID" />
+        </Card>
+
+        <Card method="DELETE" path="/api/v1/users/:id/block"
+          desc="Unblock a user. Invalidates block cache."
+          onRun={() => api('DELETE', `/api/v1/users/${targetId}/block`)}
+          runLabel="Unblock" runClass="btn-muted"
+        >
+          <Field label="user UUID to unblock" value={targetId} onChange={e => setTarget(e.target.value)} placeholder="Target user UUID" />
+        </Card>
+
+      </div>
+    </div>
+  );
+}
+
+// ── WebSocket tab ─────────────────────────────────────────────────────────────
+
+function WsTab({ wsConnected, wsMessages, feedRef, userId, onConnect, onDisconnect, onSend, onClear }) {
+  const [wsLat, setWsLat] = useState('25.0330');
+  const [wsLng, setWsLng] = useState('121.5654');
+
+  return (
+    <div>
+      <div className="sec-hd">
+        <h2>WebSocket</h2>
+        <p>
+          Connects to <code style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>/ws?user_id=&lt;uuid&gt;</code>.
+          Hub uses a single <code style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>PSubscribe("mahjong:user:*")</code> and routes events per-user.
+        </p>
+      </div>
+      <div className="ws-layout">
+
+        {/* Controls */}
+        <div className="ws-col">
+          <div className="card">
+            <div className="card-head"><span className="badge b-ws">WS</span><span className="card-path">/ws?user_id=…</span></div>
+            <div className="card-body">
+              <div className="card-desc">User ID comes from the header bar. Connect to start receiving real-time events.</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button className="btn btn-green" onClick={() => onConnect()} disabled={wsConnected}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+                  Connect
+                </button>
+                <button className="btn btn-red" onClick={onDisconnect} disabled={!wsConnected}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Disconnect
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head"><span className="badge b-ws">SEND</span><span className="card-path">ping</span></div>
+            <div className="card-body">
+              <div className="card-desc">Send ping → server replies pong. Tests keepalive.</div>
+              <button className="btn btn-muted" onClick={() => onSend({ type: 'ping' })}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Send Ping
+              </button>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head"><span className="badge b-ws">SEND</span><span className="card-path">update_location</span></div>
+            <div className="card-body">
+              <div className="card-desc">Update your position in the online-users GeoSet so nearby broadcast events are routed to you.</div>
+              <FieldRow>
+                <Field label="lat" value={wsLat} onChange={e => setWsLat(e.target.value)} />
+                <Field label="lng" value={wsLng} onChange={e => setWsLng(e.target.value)} />
+              </FieldRow>
+              <button className="btn btn-muted" onClick={() => onSend({ type: 'update_location', lat: +wsLat, lng: +wsLng })} style={{ marginTop: 8 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Send Location
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Feed */}
+        <div className="ws-feed">
+          <div className="ws-feed-hd">
+            <span>Live Event Feed</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="ws-ind">
+                <span className={`ws-dot ${wsConnected ? 'on' : ''}`} />
+                {wsConnected ? 'Connected' : 'Disconnected'}
+              </span>
+              <button className="btn btn-muted" onClick={onClear} style={{ padding: '3px 8px', fontSize: 11 }}>Clear</button>
+            </div>
+          </div>
+          <div id="ws-feed-body" ref={feedRef}>
+            {wsMessages.map((m, i) => (
+              <div key={i} className={`wm wm-${m.dir}`}>
+                <div className="wm-type">{m.type} <span className="wm-ts">{m.ts}</span></div>
+                <div>
+                  {typeof m.body === 'string'
+                    ? m.body
+                    : <pre dangerouslySetInnerHTML={{ __html: hl(m.body) }} />
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Event reference */}
+      <div style={{ marginTop: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 10 }}>
+          Server → Client Event Types
+        </div>
+        <div className="evt-grid">
+          {[
+            ['broadcast.started',    'New broadcast nearby. Includes player, coords, message, distanceMeters.'],
+            ['broadcast.updated',    'Broadcast moved ≥50m from last position.'],
+            ['broadcast.stopped',    'Broadcast ended — remove from local map.'],
+            ['room.player_joined',   'Someone joined your room. Includes full room snapshot.'],
+            ['room.player_left',     'Someone left your room. Includes updated snapshot.'],
+            ['room.full',            'Room reached 4 players. State → FULL.'],
+            ['room.dissolved',       'Host dissolved the room. All members navigate away.'],
+            ['friend.request',       'Someone sent you a friend request. Includes fromId, requestId, displayName.'],
+            ['friend.accepted',      'Your friend request was accepted. Includes friendId, requestId.'],
+            ['pong',                 'Reply to your ping message.'],
+          ].map(([type, desc]) => (
+            <div key={type} className="evt-card">
+              <div className="evt-type">{type}</div>
+              <div className="evt-desc">{desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+
+const TileIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5">
+    <rect x="3" y="3" width="18" height="18" rx="2.5"/>
+    <circle cx="8.5" cy="8.5" r="1.4" fill="var(--accent)" stroke="none"/>
+    <circle cx="15.5" cy="8.5" r="1.4" fill="var(--accent)" stroke="none"/>
+    <circle cx="8.5" cy="15.5" r="1.4" fill="var(--accent)" stroke="none"/>
+    <circle cx="15.5" cy="15.5" r="1.4" fill="var(--accent)" stroke="none"/>
+    <circle cx="12" cy="12" r="1.4" fill="var(--accent)" stroke="none"/>
+  </svg>
+);
+
+// ── Mount ─────────────────────────────────────────────────────────────────────
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
