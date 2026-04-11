@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'core/config/app_env.dart';
 import 'core/design/tokens.dart';
+import 'core/feedback/global_notice_overlay.dart';
 import 'core/network/ws_client.dart';
 import 'core/router/router.dart';
 import 'core/storage/session.dart';
@@ -8,6 +10,7 @@ import 'data/services/broadcast_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  enforceMockModeSafety();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -37,6 +40,8 @@ class MahJoinApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       routerConfig: AppRouter.router,
+      builder: (context, child) =>
+          GlobalNoticeOverlay(child: child ?? const SizedBox.shrink()),
     );
   }
 }

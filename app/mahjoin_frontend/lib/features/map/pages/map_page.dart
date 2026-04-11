@@ -3,14 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../core/config/app_env.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/error_mapper.dart';
 import '../../../core/network/ws_client.dart';
 import '../../../core/router/router.dart';
+import '../../../core/storage/session.dart';
 import '../../../data/models/models.dart';
 import '../../../core/location/location_service.dart';
 import '../../../data/services/broadcast_service.dart';
-import '../../../mock/mock_data.dart' show kMockMode;
+import '../../room/pages/create_room_page.dart';
 import '../widgets/player_marker.dart';
 import '../widgets/room_marker.dart';
 import '../widgets/nearby_panel.dart';
@@ -45,6 +48,7 @@ class _MapPageState extends State<MapPage> {
 
   StreamSubscription<WsMessage>? _wsSub;
   StreamSubscription<LatLng>? _locationSub;
+  String? _lastNavigatedFullRoomId;
 
   @override
   void initState() {
@@ -142,7 +146,7 @@ class _MapPageState extends State<MapPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = mapApiError(e, fallback: 'Could not load nearby players and rooms.');
       });
     }
   }
@@ -227,24 +231,17 @@ class _MapPageState extends State<MapPage> {
     switch (msg.type) {
       case 'broadcast.started':
         final b = Broadcast.fromJson(msg.data);
-        setState(() {
-          _players = [
-            ..._players.where((p) => p.id != b.id),
-            b,
-          ];
-        });
+        setState(() => _upsertBroadcast(b));
       case 'broadcast.stopped':
         final id = msg.data['broadcastId'] as String?;
         if (id != null) {
-          setState(() => _players = _players.where((p) => p.id != id).toList());
+          setState(() => _removeBroadcast(id));
         }
       case 'broadcast.updated':
         final id = msg.data['broadcastId'] as String?;
         if (id != null) {
           final updated = Broadcast.fromJson(msg.data);
-          setState(() {
-            _players = _players.map((p) => p.id == id ? updated : p).toList();
-          });
+          setState(() => _upsertBroadcast(updated));
         }
       case 'room.created':
       case 'room.player_joined':
@@ -253,21 +250,51 @@ class _MapPageState extends State<MapPage> {
         final roomData = msg.data['room'] as Map<String, dynamic>?;
         if (roomData != null) {
           final r = Room.fromJson(roomData);
-          setState(() {
-            _rooms = [
-              ..._rooms.where((x) => x.id != r.id),
-              r,
-            ];
-          });
+          setState(() => _upsertRoom(r));
+          final me = Session.instance.userId;
+          final isInRoom = me != null && r.members.any((m) => m.userId == me);
+          if (isInRoom && _lastNavigatedFullRoomId != r.id) {
+            _lastNavigatedFullRoomId = r.id;
+            context.push(AppRoutes.roomFull(r.id));
+          }
         }
       case 'room.dissolved':
         final roomId = msg.data['roomId'] as String?;
         if (roomId != null) {
-          setState(() => _rooms = _rooms.where((r) => r.id != roomId).toList());
-          if (_selectedRoom?.id == roomId) {
-            setState(() => _selectedRoom = null);
-          }
+          setState(() => _removeRoom(roomId));
         }
+    }
+  }
+
+  void _upsertBroadcast(Broadcast next) {
+    final map = {for (final p in _players) p.id: p};
+    map[next.id] = next;
+    _players = map.values.toList();
+    if (_selectedPlayer?.id == next.id) {
+      _selectedPlayer = next;
+    }
+  }
+
+  void _removeBroadcast(String id) {
+    _players = _players.where((p) => p.id != id).toList();
+    if (_selectedPlayer?.id == id) {
+      _selectedPlayer = null;
+    }
+  }
+
+  void _upsertRoom(Room next) {
+    final map = {for (final r in _rooms) r.id: r};
+    map[next.id] = next;
+    _rooms = map.values.toList();
+    if (_selectedRoom?.id == next.id) {
+      _selectedRoom = next;
+    }
+  }
+
+  void _removeRoom(String id) {
+    _rooms = _rooms.where((r) => r.id != id).toList();
+    if (_selectedRoom?.id == id) {
+      _selectedRoom = null;
     }
   }
 
@@ -287,7 +314,7 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Broadcast error: $e')),
+        SnackBar(content: Text(mapApiError(e, fallback: 'Broadcast action failed.'))),
       );
     }
     if (mounted) setState(() {});
@@ -304,9 +331,25 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to join: $e')),
+        SnackBar(content: Text(mapApiError(e, fallback: 'Failed to join room.'))),
       );
     }
+  }
+
+  Future<void> _openCreateRoomAt(LatLng pos) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.82,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, __) => CreateRoomPage(initialLocation: pos),
+      ),
+    );
+    if (!mounted) return;
+    _loadNearby();
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -332,6 +375,7 @@ class _MapPageState extends State<MapPage> {
                 _selectedPlayer = null;
                 _selectedRoom = null;
               }),
+              onLongPress: (_, pos) => _openCreateRoomAt(pos),
             ),
             children: [
               TileLayer(
@@ -501,6 +545,8 @@ class _MapPageState extends State<MapPage> {
                         onTap: () =>
                             setState(() => _showPlayers = !_showPlayers),
                       ),
+                      const SizedBox(width: 8),
+                      const _WsHealthChip(),
                       const SizedBox(width: 8),
                       _OnlineCount(count: _players.length),
                     ],
@@ -743,6 +789,56 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _WsHealthChip extends StatelessWidget {
+  const _WsHealthChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: WsClient.instance.healthListenable,
+      builder: (context, _) {
+        final connected = WsClient.instance.isConnected;
+        final lastPong = WsClient.instance.lastPongAt;
+        final stale = lastPong == null ||
+            DateTime.now().difference(lastPong) > const Duration(seconds: 45);
+        final status = connected
+            ? (stale ? 'WS: stale' : 'WS: ok')
+            : 'WS: off';
+        final color = connected
+            ? (stale ? AppColors.waiting : AppColors.online)
+            : AppColors.textMuted;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.12),
+            borderRadius: AppRadius.full,
+            border: Border.all(color: color.withOpacity(0.3), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                status,
+                style: AppTypography.labelSmall.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _OnlineCount extends StatelessWidget {
   final int count;
   const _OnlineCount({required this.count});
@@ -827,7 +923,7 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
     setState(() => _addingFriend = true);
     try {
       await ApiClient.post('/api/v1/friends/requests', {
-        'to_user_id': widget.player.userId,
+        'toId': widget.player.userId,
       });
       setState(() {
         _addingFriend = false;
@@ -837,7 +933,7 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
       setState(() => _addingFriend = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send request: $e')),
+          SnackBar(content: Text(mapApiError(e, fallback: 'Failed to send friend request.'))),
         );
       }
     }
@@ -871,7 +967,7 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
       setState(() => _blocking = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to block: $e')),
+          SnackBar(content: Text(mapApiError(e, fallback: 'Failed to block user.'))),
         );
       }
     }

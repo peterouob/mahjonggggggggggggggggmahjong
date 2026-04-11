@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/design/tokens.dart';
+import '../../friends/pages/friends_page.dart';
 import '../../../core/location/location_service.dart';
 import '../../../core/network/ws_client.dart';
 import '../../../core/router/router.dart';
 import '../../../core/storage/session.dart';
 import '../../../data/services/broadcast_service.dart';
+import 'profile_placeholder_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -75,7 +77,12 @@ class ProfilePage extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.settings_rounded),
                 color: Colors.white,
-                onPressed: () {},
+                onPressed: () => _openPlaceholder(
+                  context,
+                  title: 'Settings',
+                  description:
+                      'Settings panel is being built. Theme and account preferences will be available here.',
+                ),
               ),
             ],
           ),
@@ -98,12 +105,21 @@ class ProfilePage extends StatelessWidget {
                     _MenuItem(
                       icon: Icons.history_rounded,
                       label: 'Game History',
-                      onTap: () {},
+                      onTap: () => _openPlaceholder(
+                        context,
+                        title: 'Game History',
+                        description:
+                            'Match history and statistics are under development.',
+                      ),
                     ),
                     _MenuItem(
                       icon: Icons.people_rounded,
                       label: 'Friends',
-                      onTap: () {},
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const FriendsPage(),
+                        ),
+                      ),
                     ),
                   ]),
                   const SizedBox(height: AppSpacing.md),
@@ -111,17 +127,32 @@ class ProfilePage extends StatelessWidget {
                     _MenuItem(
                       icon: Icons.notifications_rounded,
                       label: 'Notifications',
-                      onTap: () {},
+                      onTap: () => _openPlaceholder(
+                        context,
+                        title: 'Notifications',
+                        description:
+                            'Notification preference controls are under development.',
+                      ),
                     ),
                     _MenuItem(
                       icon: Icons.privacy_tip_rounded,
                       label: 'Privacy',
-                      onTap: () {},
+                      onTap: () => _openPlaceholder(
+                        context,
+                        title: 'Privacy',
+                        description:
+                            'Privacy and visibility settings are under development.',
+                      ),
                     ),
                     _MenuItem(
                       icon: Icons.help_rounded,
                       label: 'Help & Support',
-                      onTap: () {},
+                      onTap: () => _openPlaceholder(
+                        context,
+                        title: 'Help & Support',
+                        description:
+                            'Support center and FAQ links are under development.',
+                      ),
                     ),
                   ]),
                   const SizedBox(height: AppSpacing.md),
@@ -229,6 +260,21 @@ class _BroadcastToggleTileState extends State<_BroadcastToggleTile> {
       ),
     );
   }
+}
+
+void _openPlaceholder(
+  BuildContext context, {
+  required String title,
+  required String description,
+}) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => ProfilePlaceholderPage(
+        title: title,
+        description: description,
+      ),
+    ),
+  );
 }
 
 class _MenuSection extends StatelessWidget {

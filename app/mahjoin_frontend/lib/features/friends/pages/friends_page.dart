@@ -1,9 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/config/app_env.dart';
 import '../../../core/design/tokens.dart';
+import '../../../core/events/app_event.dart';
+import '../../../core/events/app_event_dispatcher.dart';
+import '../../../core/feedback/notification_center.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/error_mapper.dart';
 import '../../../data/models/friend_model.dart';
 import '../../../data/models/models.dart' show PlayerStatus;
-import '../../../mock/mock_data.dart' show kMockMode;
 import '../../../shared/widgets/avatar.dart';
 import '../../../shared/widgets/status_badge.dart';
 
@@ -20,6 +25,7 @@ class _FriendsPageState extends State<FriendsPage> {
   bool _loading = false;
   String? _error;
   String _search = '';
+  StreamSubscription<AppEvent>? _eventSub;
 
   List<Friend> get _filtered => _friends
       .where((f) => f.name.toLowerCase().contains(_search.toLowerCase()))
@@ -32,6 +38,21 @@ class _FriendsPageState extends State<FriendsPage> {
   void initState() {
     super.initState();
     _load();
+    _eventSub = AppEventDispatcher.instance.stream.listen(_onEvent);
+  }
+
+  @override
+  void dispose() {
+    _eventSub?.cancel();
+    super.dispose();
+  }
+
+  void _onEvent(AppEvent event) {
+    if (!mounted) return;
+    if (event.type == AppEventType.friendRequest ||
+        event.type == AppEventType.friendAccepted) {
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -67,13 +88,14 @@ class _FriendsPageState extends State<FriendsPage> {
         _requests = requestsRaw
             .map((j) => FriendRequest.fromJson(j as Map<String, dynamic>))
             .toList();
+        NotificationCenter.instance.resetFriendRequestCount();
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = mapApiError(e, fallback: 'Could not load friends right now.');
       });
     }
   }
@@ -122,16 +144,16 @@ class _FriendsPageState extends State<FriendsPage> {
       await ApiClient.put('/api/v1/friends/requests/${req.id}/accept', {});
       _load(); // Refresh both lists
     } catch (e) {
-      _snack('Failed to accept: $e');
+      _snack(mapApiError(e, fallback: 'Failed to accept request.'));
     }
   }
 
   Future<void> _rejectRequest(FriendRequest req) async {
     try {
       await ApiClient.put('/api/v1/friends/requests/${req.id}/reject', {});
-      setState(() => _requests.remove(req));
+      await _load();
     } catch (e) {
-      _snack('Failed to reject: $e');
+      _snack(mapApiError(e, fallback: 'Failed to reject request.'));
     }
   }
 
@@ -155,9 +177,9 @@ class _FriendsPageState extends State<FriendsPage> {
     if (confirmed != true) return;
     try {
       await ApiClient.delete('/api/v1/friends/${friend.id}');
-      setState(() => _friends.remove(friend));
+      await _load();
     } catch (e) {
-      _snack('Failed to remove: $e');
+      _snack(mapApiError(e, fallback: 'Failed to remove friend.'));
     }
   }
 
@@ -168,7 +190,7 @@ class _FriendsPageState extends State<FriendsPage> {
       });
       _snack('Friend request sent!');
     } catch (e) {
-      _snack('Failed: $e');
+      _snack(mapApiError(e, fallback: 'Failed to send friend request.'));
     }
   }
 

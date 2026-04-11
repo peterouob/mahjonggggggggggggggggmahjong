@@ -1,7 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/design/tokens.dart';
+import '../../../core/events/app_event.dart';
+import '../../../core/events/app_event_dispatcher.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/error_mapper.dart';
+import '../../../core/router/router.dart';
 import '../../../core/storage/session.dart';
 import '../../../data/models/models.dart';
 
@@ -18,6 +23,8 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   bool _loading = true;
   bool _acting = false;
   String? _error;
+  StreamSubscription<AppEvent>? _eventSub;
+  bool _hasNavigatedToFull = false;
 
   bool get _isHost => _room?.hostId == Session.instance.userId;
   bool get _isMember => _room?.members.any((m) => m.userId == Session.instance.userId) ?? false;
@@ -25,7 +32,48 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   @override
   void initState() {
     super.initState();
+    _eventSub = AppEventDispatcher.instance.stream.listen(_onEvent);
     _loadRoom();
+  }
+
+  @override
+  void dispose() {
+    _eventSub?.cancel();
+    super.dispose();
+  }
+
+  void _onEvent(AppEvent event) {
+    if (!mounted) return;
+    switch (event.type) {
+      case AppEventType.roomPlayerJoined:
+      case AppEventType.roomPlayerLeft:
+      case AppEventType.roomCreated:
+      case AppEventType.roomFull:
+        final roomData = event.data['room'] as Map<String, dynamic>?;
+        if (roomData == null) return;
+        if (roomData['id'] != widget.roomId) return;
+        final room = Room.fromJson(roomData);
+        setState(() => _room = room);
+
+        if (event.type == AppEventType.roomFull && !_hasNavigatedToFull) {
+          final me = Session.instance.userId;
+          final isInRoom =
+              me != null && room.members.any((m) => m.userId == me);
+          if (isInRoom) {
+            _hasNavigatedToFull = true;
+            context.push(AppRoutes.roomFull(room.id));
+          }
+        }
+        break;
+      case AppEventType.roomDissolved:
+        final roomId = event.data['roomId'] as String?;
+        if (roomId != widget.roomId) return;
+        _snack('Room was dissolved');
+        context.go(AppRoutes.map);
+        break;
+      default:
+        break;
+    }
   }
 
   Future<void> _loadRoom() async {
@@ -44,7 +92,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     } catch (e) {
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = mapApiError(e, fallback: 'Could not load room details.');
       });
     }
   }
@@ -55,7 +103,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       await ApiClient.post('/api/v1/rooms/${widget.roomId}/join', {});
       await _loadRoom(); // Refresh to see updated member list
     } catch (e) {
-      if (mounted) _snack('Failed to join: $e');
+      if (mounted) _snack(mapApiError(e, fallback: 'Failed to join room.'));
     } finally {
       if (mounted) setState(() => _acting = false);
     }
@@ -68,7 +116,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       await ApiClient.post('/api/v1/rooms/${widget.roomId}/leave', {});
       if (mounted) context.pop();
     } catch (e) {
-      if (mounted) _snack('Failed to leave: $e');
+      if (mounted) _snack(mapApiError(e, fallback: 'Failed to leave room.'));
       setState(() => _acting = false);
     }
   }
@@ -80,7 +128,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       await ApiClient.delete('/api/v1/rooms/${widget.roomId}');
       if (mounted) context.pop();
     } catch (e) {
-      if (mounted) _snack('Failed to dissolve: $e');
+      if (mounted) {
+        _snack(mapApiError(e, fallback: 'Failed to dissolve room.'));
+      }
       setState(() => _acting = false);
     }
   }

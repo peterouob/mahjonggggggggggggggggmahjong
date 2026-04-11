@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/pages/onboarding_page.dart';
 import '../../features/auth/pages/login_page.dart';
 import '../../features/room/pages/room_detail_page.dart';
+import '../../features/room/pages/room_full_page.dart';
 import '../../shared/widgets/main_shell.dart';
 import '../storage/session.dart';
 
@@ -13,13 +14,31 @@ abstract class AppRoutes {
   static const roomBase = '/room';
 
   static String room(String id) => '/room/$id';
+  static String roomFull(String id) => '/room/$id/full';
 }
 
 class AppRouter {
   AppRouter._();
 
   static final router = GoRouter(
+    refreshListenable: Session.instance,
     initialLocation: Session.instance.isLoggedIn ? AppRoutes.map : AppRoutes.onboarding,
+    redirect: (context, state) {
+      final isLoggedIn = Session.instance.isLoggedIn;
+      final location = state.matchedLocation;
+      final isPublicRoute =
+          location == AppRoutes.onboarding || location == AppRoutes.login;
+
+      if (!isLoggedIn && !isPublicRoute) {
+        return AppRoutes.onboarding;
+      }
+
+      if (isLoggedIn && isPublicRoute) {
+        return AppRoutes.map;
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppRoutes.onboarding,
@@ -43,6 +62,14 @@ class AppRouter {
         path: '/room/:id',
         pageBuilder: (ctx, state) => MaterialPage(
           child: RoomDetailPage(
+            roomId: state.pathParameters['id']!,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/room/:id/full',
+        pageBuilder: (ctx, state) => MaterialPage(
+          child: RoomFullPage(
             roomId: state.pathParameters['id']!,
           ),
         ),

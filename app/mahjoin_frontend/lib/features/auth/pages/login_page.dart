@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/error_mapper.dart';
 import '../../../core/network/ws_client.dart';
 import '../../../core/router/router.dart';
 import '../../../core/storage/session.dart';
@@ -138,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Network error: $e')));
+          .showSnackBar(SnackBar(content: Text(mapApiError(e, fallback: 'Unable to sign in right now.'))));
     }
   }
 

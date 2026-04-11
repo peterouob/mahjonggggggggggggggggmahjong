@@ -1,6 +1,6 @@
 import 'dart:async';
+import '../../core/config/app_env.dart';
 import '../../core/network/api_client.dart';
-import '../../mock/mock_data.dart' show kMockMode;
 
 /// Manages the user's own broadcast: start, stop, heartbeat, location update.
 /// Must be started before the 30-second server TTL expires.

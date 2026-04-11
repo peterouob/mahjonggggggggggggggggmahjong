@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/location/location_service.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/error_mapper.dart';
 import '../../../core/router/router.dart';
 import '../../../core/storage/session.dart';
 
 class CreateRoomPage extends StatefulWidget {
-  const CreateRoomPage({super.key});
+  final LatLng? initialLocation;
+
+  const CreateRoomPage({super.key, this.initialLocation});
 
   @override
   State<CreateRoomPage> createState() => _CreateRoomPageState();
@@ -16,10 +20,21 @@ class CreateRoomPage extends StatefulWidget {
 class _CreateRoomPageState extends State<CreateRoomPage> {
   bool _loading = false;
   final _nameController = TextEditingController();
+  final _placeController = TextEditingController();
+  String _gameRule = 'TAIWAN_MAHJONG';
+  bool _isPublic = true;
+  LatLng? _selectedLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLocation = widget.initialLocation;
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _placeController.dispose();
     super.dispose();
   }
 
@@ -34,13 +49,21 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
     setState(() => _loading = true);
     try {
-      final location = await LocationService.instance.getCurrentPosition();
-      final result = await ApiClient.post('/api/v1/rooms', {
+      final location =
+          _selectedLocation ?? await LocationService.instance.getCurrentPosition();
+      final payload = {
         'name': name,
         'latitude': location.latitude,
         'longitude': location.longitude,
-        'isPublic': true,
-      });
+        'isPublic': _isPublic,
+        'gameRule': _gameRule,
+      };
+      final placeName = _placeController.text.trim();
+      if (placeName.isNotEmpty) {
+        payload['placeName'] = placeName;
+      }
+
+      final result = await ApiClient.post('/api/v1/rooms', payload);
       // Backend returns {"room": {...}}
       final room = result['room'] as Map<String, dynamic>?;
       final roomId = room?['id'] as String?;
@@ -54,13 +77,13 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create room: ${e.body}')),
+        SnackBar(content: Text(mapApiError(e, fallback: 'Failed to create room.'))),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network error: $e')),
+        SnackBar(content: Text(mapApiError(e, fallback: 'Failed to create room.'))),
       );
     }
   }
@@ -108,10 +131,18 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                             style: AppTypography.labelLarge
                                 .copyWith(color: AppColors.primary)),
                         Text(
-                          'Players within 5 km can see and join your room',
+                          _selectedLocation == null
+                              ? 'Players within 5 km can see and join your room'
+                              : 'Using your selected map position for this room',
                           style: AppTypography.bodyMedium.copyWith(
                               color: AppColors.primary.withOpacity(0.7)),
                         ),
+                        if (_selectedLocation != null)
+                          Text(
+                            '${_selectedLocation!.latitude.toStringAsFixed(5)}, ${_selectedLocation!.longitude.toStringAsFixed(5)}',
+                            style: AppTypography.labelSmall
+                                .copyWith(color: AppColors.primary),
+                          ),
                       ],
                     ),
                   ),
@@ -132,6 +163,61 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     color: AppColors.textMuted, size: 20),
               ),
               textCapitalization: TextCapitalization.sentences,
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            Text('Place Name (Optional)', style: AppTypography.labelLarge),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _placeController,
+              decoration: const InputDecoration(
+                hintText: 'e.g. Taipei Main Station',
+                prefixIcon: Icon(Icons.place_rounded,
+                    color: AppColors.textMuted, size: 20),
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            Text('Game Rule', style: AppTypography.labelLarge),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<String>(
+              value: _gameRule,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.casino_rounded,
+                    color: AppColors.textMuted, size: 20),
+              ),
+              items: const [
+                DropdownMenuItem(
+                    value: 'TAIWAN_MAHJONG', child: Text('Taiwan Mahjong')),
+                DropdownMenuItem(
+                    value: 'THREE_PLAYER', child: Text('Three Player')),
+                DropdownMenuItem(
+                    value: 'NATIONAL_STANDARD', child: Text('National Standard')),
+              ],
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() => _gameRule = v);
+              },
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _isPublic,
+              onChanged: (v) => setState(() => _isPublic = v),
+              title: Text('Public Room', style: AppTypography.labelLarge),
+              subtitle: Text(
+                _isPublic
+                    ? 'Visible to nearby players'
+                    : 'Only available by direct room entry',
+                style: AppTypography.labelSmall
+                    .copyWith(color: AppColors.textSecondary),
+              ),
+              activeColor: AppColors.primary,
             ),
 
             const SizedBox(height: AppSpacing.lg),
