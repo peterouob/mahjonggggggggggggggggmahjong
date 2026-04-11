@@ -37,6 +37,20 @@ flutter run --dart-define=MOCK_MODE=true
 可用的 `dart-define` 參數：
 - `MOCK_MODE`: `true` / `false`
 - `API_BASE_URL`: 例如 `http://168.138.210.65:8080`
+- `ALLOW_MOCK_IN_RELEASE`: `true` / `false`（預設 `false`，release 需明確允許）
+
+---
+
+## 實作狀態（2026-04-11）
+
+- M1 已完成：事件分發器、路由守衛、全域通知、錯誤映射。
+- M2 已完成：全事件覆蓋、RoomFullPage、room.dissolved 導流、WS health 指示。
+- M3 已完成：地圖長按建房、Create Room 完整表單、Profile 入口接線。
+- M4 已完成：
+  - REST/事件狀態合併策略（idempotent upsert/remove）
+  - Mock mode release 安全邊界（禁止誤開）
+  - 核心單元測試（事件映射、session 持久化、錯誤映射）
+  - iOS 實機 smoke checklist（見 `IOS_SMOKE_CHECKLIST.md`）
 
 ---
 

@@ -65,6 +65,18 @@ MVP 階段沒有 JWT，所有 API 都帶 `X-User-ID` header 做身份識別。
 > ⚠️ **不使用**：Riverpod（已在 pubspec，但尚未啟用）、Ferry、GetX、BLoC。  
 > 現在的狀態管理全部用 **StatefulWidget + setState**。
 
+### 2.1 M4 品質更新（2026-04-11）
+
+- 已加入事件去重合併策略（Map 頁面對 broadcast/room 事件做 idempotent upsert/remove）。
+- 已加入 release mock 安全防護：
+  - release + `MOCK_MODE=true` 會直接阻擋啟動。
+  - 若要 QA，需額外設定 `ALLOW_MOCK_IN_RELEASE=true`。
+- 已加入基礎單元測試：
+  - 事件映射/分發
+  - Session 持久化
+  - API 錯誤映射
+- iOS 實機驗收清單：`IOS_SMOKE_CHECKLIST.md`。
+
 ---
 
 ## 3. 學習路線圖
