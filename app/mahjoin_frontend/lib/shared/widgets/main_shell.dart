@@ -41,7 +41,7 @@ class _MainShellState extends State<MainShell> {
                 _NavItem(
                   icon: Icons.map_rounded,
                   activeIcon: Icons.map_rounded,
-                  label: 'Map',
+                  label: '地圖',
                   active: _index == 0,
                   onTap: () => setState(() => _index = 0),
                 ),
@@ -86,14 +86,14 @@ class _MainShellState extends State<MainShell> {
                 _NavItem(
                   icon: Icons.people_outline_rounded,
                   activeIcon: Icons.people_rounded,
-                  label: 'Friends',
+                  label: '好友',
                   active: _index == 1,
                   onTap: () => setState(() => _index = 1),
                 ),
                 _NavItem(
                   icon: Icons.person_outline_rounded,
                   activeIcon: Icons.person_rounded,
-                  label: 'Profile',
+                  label: '我的',
                   active: _index == 2,
                   onTap: () => setState(() => _index = 2),
                 ),

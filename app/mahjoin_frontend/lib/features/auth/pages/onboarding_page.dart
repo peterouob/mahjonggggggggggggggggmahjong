@@ -16,23 +16,23 @@ class _OnboardingPageState extends State<OnboardingPage> {
   static const _steps = [
     _OnboardingStep(
       icon: Icons.location_on_rounded,
-      title: 'Find Players Nearby',
+      title: '探索附近牌友',
       subtitle:
-          'See who is looking for a Mahjong game right now, within 5 km of you — in real time.',
+          '即時查看你 5 公里內正在找牌局的玩家，快速找到同桌夥伴。',
       iconColor: AppColors.primary,
     ),
     _OnboardingStep(
       icon: Icons.people_rounded,
-      title: 'Join or Create a Room',
+      title: '加入或建立房間',
       subtitle:
-          'Open a room and wait for 3 more players, or browse open rooms near you and jump in instantly.',
+          '你可以建立房間等待牌友，也可以直接加入附近現成房間馬上開打。',
       iconColor: AppColors.secondary,
     ),
     _OnboardingStep(
       icon: Icons.star_rounded,
-      title: 'Play & Build Your Rating',
+      title: '對局並提升評分',
       subtitle:
-          'Track your wins, grow your rating, and stay connected with your regular crew.',
+          '記錄勝場、累積評分，和你的固定牌咖保持連線。',
       iconColor: AppColors.waiting,
     ),
   ];
@@ -117,19 +117,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
                       ),
-                      child: const Text('Next'),
+                      child: const Text('下一步'),
                     ),
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: () => _goToLogin(context),
-                      child: Text('Skip',
+                      child: Text('略過',
                           style: AppTypography.labelLarge
                               .copyWith(color: AppColors.textSecondary)),
                     ),
                   ] else ...[
                     ElevatedButton(
                       onPressed: () => _goToLogin(context),
-                      child: const Text('Get Started'),
+                      child: const Text('開始使用'),
                     ),
                   ],
                 ],

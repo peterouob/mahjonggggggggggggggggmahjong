@@ -71,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordCtrl.text;
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter username and password')),
+        const SnackBar(content: Text('請輸入使用者名稱與密碼')),
       );
       return;
     }
@@ -81,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
       final displayName = _displayNameCtrl.text.trim();
       if (email.isEmpty || displayName.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all fields')),
+          const SnackBar(content: Text('請完整填寫所有欄位')),
         );
         return;
       }
@@ -127,11 +127,11 @@ class _LoginPageState extends State<LoginPage> {
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      String message = _isRegister ? 'Registration failed' : 'Login failed';
+      String message = _isRegister ? '註冊失敗' : '登入失敗';
       if (e.statusCode == 401 || e.statusCode == 404) {
-        message = 'Invalid username or password';
+        message = '使用者名稱或密碼錯誤';
       } else if (e.statusCode == 409) {
-        message = 'Username already taken';
+        message = '此使用者名稱已被使用';
       }
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
@@ -139,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(mapApiError(e, fallback: 'Unable to sign in right now.'))));
+          .showSnackBar(SnackBar(content: Text(mapApiError(e, fallback: '目前無法登入，請稍後再試。'))));
     }
   }
 
@@ -176,10 +176,10 @@ class _LoginPageState extends State<LoginPage> {
                     color: Colors.white, size: 28),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text('Welcome to\nMahJoin', style: AppTypography.displayLarge),
+              Text('歡迎使用\nMahJoin', style: AppTypography.displayLarge),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Find Mahjong players around you',
+                '快速找到你附近的麻將玩家',
                 style: AppTypography.bodyLarge
                     .copyWith(color: AppColors.textSecondary),
               ),
@@ -187,14 +187,14 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: AppSpacing.xxl),
 
               // Username input
-              Text('Username', style: AppTypography.labelLarge),
+              Text('使用者名稱', style: AppTypography.labelLarge),
               const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: _usernameCtrl,
                 keyboardType: TextInputType.text,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  hintText: 'Enter your username',
+                  hintText: '請輸入使用者名稱',
                   prefixIcon: Icon(Icons.person_rounded,
                       color: AppColors.textMuted, size: 20),
                 ),
@@ -203,27 +203,27 @@ class _LoginPageState extends State<LoginPage> {
 
               // Register-only fields
               if (_isRegister) ...[
-                Text('Display Name', style: AppTypography.labelLarge),
+                Text('顯示名稱', style: AppTypography.labelLarge),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
                   controller: _displayNameCtrl,
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
-                    hintText: 'Enter your display name',
+                    hintText: '請輸入顯示名稱',
                     prefixIcon: Icon(Icons.badge_rounded,
                         color: AppColors.textMuted, size: 20),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Email', style: AppTypography.labelLarge),
+                Text('電子郵件', style: AppTypography.labelLarge),
                 const SizedBox(height: AppSpacing.sm),
                 TextField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
-                    hintText: 'Enter your email',
+                    hintText: '請輸入電子郵件',
                     prefixIcon: Icon(Icons.email_rounded,
                         color: AppColors.textMuted, size: 20),
                   ),
@@ -232,7 +232,7 @@ class _LoginPageState extends State<LoginPage> {
               ],
 
               // Password input
-              Text('Password', style: AppTypography.labelLarge),
+              Text('密碼', style: AppTypography.labelLarge),
               const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: _passwordCtrl,
@@ -240,7 +240,7 @@ class _LoginPageState extends State<LoginPage> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
                 decoration: const InputDecoration(
-                  hintText: 'Enter your password',
+                  hintText: '請輸入密碼',
                   prefixIcon: Icon(Icons.lock_rounded,
                       color: AppColors.textMuted, size: 20),
                 ),
@@ -258,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.white,
                         ),
                       )
-                    : Text(_isRegister ? 'Register' : 'Sign In'),
+                      : Text(_isRegister ? '註冊' : '登入'),
               ),
 
               const SizedBox(height: AppSpacing.md),
@@ -269,8 +269,8 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: () => setState(() => _isRegister = !_isRegister),
                   child: Text(
                     _isRegister
-                        ? 'Already have an account? Sign In'
-                        : "Don't have an account? Register",
+                      ? '已有帳號？前往登入'
+                      : '還沒有帳號？立即註冊',
                     style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.secondary,
                         fontWeight: FontWeight.w600),
@@ -282,7 +282,7 @@ class _LoginPageState extends State<LoginPage> {
 
               Center(
                 child: Text(
-                  'By continuing you agree to our Terms & Privacy Policy',
+                  '繼續使用即表示你同意服務條款與隱私政策',
                   style: AppTypography.labelSmall,
                   textAlign: TextAlign.center,
                 ),
@@ -295,7 +295,7 @@ class _LoginPageState extends State<LoginPage> {
                   const Expanded(child: Divider()),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('DEV — Quick Login',
+                    child: Text('開發模式 - 快速登入',
                         style: AppTypography.labelSmall
                             .copyWith(color: AppColors.textMuted)),
                   ),

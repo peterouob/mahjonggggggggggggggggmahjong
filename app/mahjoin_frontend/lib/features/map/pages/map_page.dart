@@ -146,7 +146,7 @@ class _MapPageState extends State<MapPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = mapApiError(e, fallback: 'Could not load nearby players and rooms.');
+        _error = mapApiError(e, fallback: '無法載入附近玩家與房間。');
       });
     }
   }
@@ -314,7 +314,7 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapApiError(e, fallback: 'Broadcast action failed.'))),
+        SnackBar(content: Text(mapApiError(e, fallback: '廣播操作失敗。'))),
       );
     }
     if (mounted) setState(() {});
@@ -331,7 +331,7 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapApiError(e, fallback: 'Failed to join room.'))),
+        SnackBar(content: Text(mapApiError(e, fallback: '加入房間失敗。'))),
       );
     }
   }
@@ -510,7 +510,7 @@ class _MapPageState extends State<MapPage> {
                               const Icon(Icons.search_rounded,
                                   color: AppColors.textMuted, size: 20),
                               const SizedBox(width: 8),
-                              Text('Search players or locations',
+                                Text('搜尋玩家或地點',
                                   style: AppTypography.bodyMedium.copyWith(
                                       color: AppColors.textMuted)),
                             ],
@@ -531,7 +531,7 @@ class _MapPageState extends State<MapPage> {
                   child: Row(
                     children: [
                       _FilterChip(
-                        label: 'Rooms',
+                        label: '房間',
                         icon: Icons.table_restaurant_rounded,
                         active: _showRooms,
                         onTap: () =>
@@ -539,7 +539,7 @@ class _MapPageState extends State<MapPage> {
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
-                        label: 'Players',
+                        label: '玩家',
                         icon: Icons.person_rounded,
                         active: _showPlayers,
                         onTap: () =>
@@ -652,15 +652,15 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Map Filters', style: AppTypography.headlineMedium),
+            Text('地圖篩選', style: AppTypography.headlineMedium),
             const SizedBox(height: AppSpacing.md),
-            _FilterTile(label: 'Show Waiting Rooms', value: true),
-            _FilterTile(label: 'Show Online Players', value: true),
-            _FilterTile(label: 'Friends Only', value: false),
+            _FilterTile(label: '顯示等待中的房間', value: true),
+            _FilterTile(label: '顯示在線玩家', value: true),
+            _FilterTile(label: '只顯示好友', value: false),
             const SizedBox(height: AppSpacing.md),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Apply'),
+              child: const Text('套用'),
             ),
             const SizedBox(height: 8),
           ],
@@ -690,12 +690,12 @@ class _ErrorBanner extends StatelessWidget {
           const Icon(Icons.wifi_off_rounded, color: Colors.red, size: 16),
           const SizedBox(width: 8),
           const Expanded(
-            child: Text('Could not load nearby data',
+            child: Text('無法載入附近資料',
                 style: TextStyle(color: Colors.red, fontSize: 13)),
           ),
           GestureDetector(
             onTap: onRetry,
-            child: const Text('Retry',
+            child: const Text('重試',
                 style: TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.w600,
@@ -802,8 +802,8 @@ class _WsHealthChip extends StatelessWidget {
         final stale = lastPong == null ||
             DateTime.now().difference(lastPong) > const Duration(seconds: 45);
         final status = connected
-            ? (stale ? 'WS: stale' : 'WS: ok')
-            : 'WS: off';
+            ? (stale ? '連線：延遲' : '連線：正常')
+            : '連線：離線';
         final color = connected
             ? (stale ? AppColors.waiting : AppColors.online)
             : AppColors.textMuted;
@@ -862,7 +862,7 @@ class _OnlineCount extends StatelessWidget {
               decoration: const BoxDecoration(
                   color: AppColors.online, shape: BoxShape.circle)),
           const SizedBox(width: 5),
-          Text('$count online',
+          Text('$count 位在線',
               style: AppTypography.labelSmall.copyWith(
                   color: AppColors.online, fontWeight: FontWeight.w600)),
         ],
@@ -933,7 +933,7 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
       setState(() => _addingFriend = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mapApiError(e, fallback: 'Failed to send friend request.'))),
+          SnackBar(content: Text(mapApiError(e, fallback: '送出好友邀請失敗。'))),
         );
       }
     }
@@ -943,31 +943,28 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Block Player'),
-        content: Text(
-            'Block ${widget.player.userName}? They won\'t appear on your map.'),
+        title: const Text('封鎖玩家'),
+        content: Text('確定要封鎖 ${widget.player.userName} 嗎？封鎖後對方不會出現在你的地圖上。'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+              child: const Text('取消')),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Block',
-                  style: TextStyle(color: AppColors.full))),
+              child: const Text('封鎖', style: TextStyle(color: AppColors.full))),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
     setState(() => _blocking = true);
     try {
-      await ApiClient.post(
-          '/api/v1/users/${widget.player.userId}/block', {});
+      await ApiClient.post('/api/v1/users/${widget.player.userId}/block', {});
       if (mounted) widget.onClose();
     } catch (e) {
       setState(() => _blocking = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mapApiError(e, fallback: 'Failed to block user.'))),
+          SnackBar(content: Text(mapApiError(e, fallback: '封鎖玩家失敗。'))),
         );
       }
     }
@@ -1005,8 +1002,7 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(player.userName,
-                        style: AppTypography.headlineMedium),
+                    Text(player.userName, style: AppTypography.headlineMedium),
                     const SizedBox(height: 3),
                     Row(
                       children: [
@@ -1014,12 +1010,11 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
                           width: 7,
                           height: 7,
                           decoration: const BoxDecoration(
-                              color: AppColors.online,
-                              shape: BoxShape.circle),
+                              color: AppColors.online, shape: BoxShape.circle),
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          '${player.distanceKm.toStringAsFixed(1)} km away',
+                          '距離 ${player.distanceKm.toStringAsFixed(1)} 公里',
                           style: AppTypography.labelSmall,
                         ),
                         if (player.rating != null) ...[
@@ -1027,15 +1022,13 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
                           const Icon(Icons.star_rounded,
                               size: 13, color: AppColors.waiting),
                           const SizedBox(width: 3),
-                          Text('${player.rating}',
-                              style: AppTypography.labelSmall),
+                          Text('${player.rating}', style: AppTypography.labelSmall),
                         ],
                       ],
                     ),
                   ],
                 ),
               ),
-              // Block menu
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert_rounded,
                     color: AppColors.textMuted, size: 20),
@@ -1047,11 +1040,9 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
                     value: 'block',
                     child: Row(
                       children: [
-                        Icon(Icons.block_rounded,
-                            color: AppColors.full, size: 18),
+                        Icon(Icons.block_rounded, color: AppColors.full, size: 18),
                         SizedBox(width: 10),
-                        Text('Block Player',
-                            style: TextStyle(color: AppColors.full)),
+                        Text('封鎖玩家', style: TextStyle(color: AppColors.full)),
                       ],
                     ),
                   ),
@@ -1075,50 +1066,42 @@ class _PlayerDetailCardState extends State<PlayerDetailCard> {
                             child: SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2))))
+                                child: CircularProgressIndicator(strokeWidth: 2))))
                     : _friendRequestSent
                         ? OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                  color: AppColors.online),
+                              side: const BorderSide(color: AppColors.online),
                               shape: const RoundedRectangleBorder(
                                   borderRadius: AppRadius.md),
                             ),
                             onPressed: null,
-                            child: Text('Request Sent',
+                            child: Text('已送出邀請',
                                 style: AppTypography.labelLarge
                                     .copyWith(color: AppColors.online)),
                           )
                         : OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                  color: AppColors.divider),
+                              side: const BorderSide(color: AppColors.divider),
                               shape: const RoundedRectangleBorder(
                                   borderRadius: AppRadius.md),
                             ),
-                            onPressed: _addingFriend
-                                ? null
-                                : _sendFriendRequest,
+                            onPressed: _addingFriend ? null : _sendFriendRequest,
                             child: _addingFriend
                                 ? const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2))
-                                : Text('Add Friend',
+                                    child: CircularProgressIndicator(strokeWidth: 2))
+                                : Text('加好友',
                                     style: AppTypography.labelLarge
-                                        .copyWith(
-                                            color: AppColors.secondary)),
+                                        .copyWith(color: AppColors.secondary)),
                           ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(0, 44)),
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
                   onPressed: () {},
-                  child: const Text('Invite to Room'),
+                  child: const Text('邀請進房'),
                 ),
               ),
             ],
@@ -1197,7 +1180,7 @@ class _RoomDetailCardState extends State<RoomDetailCard> {
                         const SizedBox(width: 3),
                         Expanded(
                           child: Text(
-                              '${room.distanceKm.toStringAsFixed(1)} km · Host: ${room.hostName}',
+                              '距離 ${room.distanceKm.toStringAsFixed(1)} 公里 · 房主：${room.hostName}',
                               style: AppTypography.labelSmall,
                               overflow: TextOverflow.ellipsis),
                         ),
@@ -1214,17 +1197,14 @@ class _RoomDetailCardState extends State<RoomDetailCard> {
             ],
           ),
           const SizedBox(height: 12),
-          // Player slots
           Row(
             children: List.generate(room.maxPlayers, (i) {
               final filled = i < room.currentPlayers;
               final avatars = room.playerAvatars;
-              final avatar =
-                  filled && i < avatars.length ? avatars[i] : null;
+              final avatar = filled && i < avatars.length ? avatars[i] : null;
               return Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(
-                      right: i < room.maxPlayers - 1 ? 6 : 0),
+                  padding: EdgeInsets.only(right: i < room.maxPlayers - 1 ? 6 : 0),
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
@@ -1254,20 +1234,18 @@ class _RoomDetailCardState extends State<RoomDetailCard> {
           const SizedBox(height: 12),
           Row(
             children: [
-              // View details button
               Expanded(
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.divider),
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: AppRadius.md),
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
                     minimumSize: const Size(0, 44),
                   ),
                   onPressed: () {
                     widget.onClose();
                     context.push(AppRoutes.room(room.id));
                   },
-                  child: Text('Details',
+                  child: Text('詳情',
                       style: AppTypography.labelLarge
                           .copyWith(color: AppColors.textSecondary)),
                 ),
@@ -1293,7 +1271,7 @@ class _RoomDetailCardState extends State<RoomDetailCard> {
                           height: 18,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : Text(canJoin ? 'Join' : 'Full'),
+                      : Text(canJoin ? '加入' : '已滿'),
                 ),
               ),
             ],

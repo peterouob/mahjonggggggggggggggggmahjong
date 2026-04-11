@@ -95,7 +95,7 @@ class _FriendsPageState extends State<FriendsPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = mapApiError(e, fallback: 'Could not load friends right now.');
+        _error = mapApiError(e, fallback: '目前無法載入好友資料。');
       });
     }
   }
@@ -144,7 +144,7 @@ class _FriendsPageState extends State<FriendsPage> {
       await ApiClient.put('/api/v1/friends/requests/${req.id}/accept', {});
       _load(); // Refresh both lists
     } catch (e) {
-      _snack(mapApiError(e, fallback: 'Failed to accept request.'));
+      _snack(mapApiError(e, fallback: '接受邀請失敗。'));
     }
   }
 
@@ -153,7 +153,7 @@ class _FriendsPageState extends State<FriendsPage> {
       await ApiClient.put('/api/v1/friends/requests/${req.id}/reject', {});
       await _load();
     } catch (e) {
-      _snack(mapApiError(e, fallback: 'Failed to reject request.'));
+      _snack(mapApiError(e, fallback: '拒絕邀請失敗。'));
     }
   }
 
@@ -161,15 +161,15 @@ class _FriendsPageState extends State<FriendsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Remove Friend'),
-        content: Text('Remove ${friend.name} from your friends?'),
+        title: const Text('移除好友'),
+        content: Text('確定要將 ${friend.name} 從好友名單移除嗎？'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+              child: const Text('取消')),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Remove',
+              child: const Text('移除',
                   style: TextStyle(color: AppColors.full))),
         ],
       ),
@@ -179,7 +179,7 @@ class _FriendsPageState extends State<FriendsPage> {
       await ApiClient.delete('/api/v1/friends/${friend.id}');
       await _load();
     } catch (e) {
-      _snack(mapApiError(e, fallback: 'Failed to remove friend.'));
+      _snack(mapApiError(e, fallback: '移除好友失敗。'));
     }
   }
 
@@ -188,9 +188,9 @@ class _FriendsPageState extends State<FriendsPage> {
       await ApiClient.post('/api/v1/friends/requests', {
         'toUsername': targetUsername,
       });
-      _snack('Friend request sent!');
+      _snack('已送出好友邀請');
     } catch (e) {
-      _snack(mapApiError(e, fallback: 'Failed to send friend request.'));
+      _snack(mapApiError(e, fallback: '送出好友邀請失敗。'));
     }
   }
 
@@ -205,7 +205,7 @@ class _FriendsPageState extends State<FriendsPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Friends'),
+        title: const Text('好友'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -215,7 +215,7 @@ class _FriendsPageState extends State<FriendsPage> {
             icon: const Icon(Icons.person_add_rounded),
             color: AppColors.primary,
             onPressed: () => _showAddFriend(context),
-            tooltip: 'Add Friend',
+            tooltip: '新增好友',
           ),
         ],
       ),
@@ -232,7 +232,7 @@ class _FriendsPageState extends State<FriendsPage> {
                       child: TextField(
                         onChanged: (v) => setState(() => _search = v),
                         decoration: const InputDecoration(
-                          hintText: 'Search friends...',
+                          hintText: '搜尋好友...',
                           prefixIcon: Icon(Icons.search_rounded,
                               color: AppColors.textMuted, size: 20),
                         ),
@@ -250,7 +250,7 @@ class _FriendsPageState extends State<FriendsPage> {
                     // ── Online now ────────────────────────────────────
                     if (_online.isNotEmpty) ...[
                       _SectionHeader(
-                        label: 'Online Now',
+                        label: '目前在線',
                         count: _online.length,
                         color: AppColors.online,
                       ),
@@ -281,7 +281,7 @@ class _FriendsPageState extends State<FriendsPage> {
                               children: [
                                 if (_online.isNotEmpty)
                                   _SectionHeader(
-                                    label: 'All Friends',
+                                    label: '所有好友',
                                     count: _filtered.length,
                                   ),
                                 ..._filtered.map(
@@ -327,9 +327,9 @@ class _FriendsPageState extends State<FriendsPage> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Add Friend', style: AppTypography.headlineLarge),
+            Text('新增好友', style: AppTypography.headlineLarge),
             const SizedBox(height: AppSpacing.sm),
-            Text('Enter their username to send a friend request',
+            Text('輸入對方使用者名稱以送出好友邀請',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: AppSpacing.md),
@@ -337,7 +337,7 @@ class _FriendsPageState extends State<FriendsPage> {
               controller: ctrl,
               autofocus: true,
               decoration: const InputDecoration(
-                hintText: 'Enter username...',
+                hintText: '請輸入使用者名稱...',
                 prefixIcon: Icon(Icons.person_search_rounded,
                     color: AppColors.textMuted, size: 20),
               ),
@@ -350,7 +350,7 @@ class _FriendsPageState extends State<FriendsPage> {
                 Navigator.pop(context);
                 _sendFriendRequest(username);
               },
-              child: const Text('Send Request'),
+              child: const Text('送出邀請'),
             ),
           ],
         ),
@@ -375,9 +375,9 @@ class _ErrorView extends StatelessWidget {
           const Icon(Icons.wifi_off_rounded,
               size: 48, color: AppColors.textMuted),
           const SizedBox(height: 12),
-          Text('Could not load friends', style: AppTypography.headlineMedium),
+          Text('無法載入好友資料', style: AppTypography.headlineMedium),
           const SizedBox(height: 8),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          TextButton(onPressed: onRetry, child: const Text('重試')),
         ],
       ),
     );
@@ -399,7 +399,7 @@ class _EmptyState extends StatelessWidget {
               size: 48, color: AppColors.textMuted),
           const SizedBox(height: 12),
           Text(
-            hasSearch ? 'No results' : 'No friends yet',
+            hasSearch ? '找不到符合結果' : '目前還沒有好友',
             style: AppTypography.headlineMedium,
           ),
           if (!hasSearch) ...[
@@ -407,7 +407,7 @@ class _EmptyState extends StatelessWidget {
             TextButton.icon(
               onPressed: onAdd,
               icon: const Icon(Icons.person_add_rounded),
-              label: const Text('Add a Friend'),
+              label: const Text('新增好友'),
             ),
           ],
         ],
@@ -462,7 +462,7 @@ class _RequestsBanner extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '${requests.length} pending friend request${requests.length > 1 ? 's' : ''}',
+                '有 ${requests.length} 筆待處理好友邀請',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.secondary),
               ),
@@ -499,7 +499,7 @@ class _RequestsBanner extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child:
-                Text('Friend Requests', style: AppTypography.headlineMedium),
+              Text('好友邀請', style: AppTypography.headlineMedium),
           ),
           const SizedBox(height: 8),
           ...requests.map(
@@ -530,7 +530,7 @@ class _RequestsBanner extends StatelessWidget {
                       Navigator.pop(context);
                       onAccept(req);
                     },
-                    tooltip: 'Accept',
+                    tooltip: '接受',
                   ),
                   IconButton(
                     icon: const Icon(Icons.cancel_rounded,
@@ -539,7 +539,7 @@ class _RequestsBanner extends StatelessWidget {
                       Navigator.pop(context);
                       onReject(req);
                     },
-                    tooltip: 'Reject',
+                    tooltip: '拒絕',
                   ),
                 ],
               ),
@@ -692,7 +692,7 @@ class _FriendTile extends StatelessWidget {
                     Icon(Icons.person_remove_rounded,
                         color: AppColors.full, size: 18),
                     SizedBox(width: 10),
-                    Text('Remove Friend',
+                    Text('移除好友',
                         style: TextStyle(color: AppColors.full)),
                   ],
                 ),

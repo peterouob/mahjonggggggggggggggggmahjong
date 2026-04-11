@@ -74,7 +74,7 @@ class _NearbyPanelState extends State<NearbyPanel>
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Row(
               children: [
-                Text('Nearby', style: AppTypography.headlineMedium),
+                Text('附近', style: AppTypography.headlineMedium),
                 const Spacer(),
                 TabBar(
                   controller: _tab,
@@ -88,8 +88,8 @@ class _NearbyPanelState extends State<NearbyPanel>
                   indicatorSize: TabBarIndicatorSize.label,
                   dividerColor: Colors.transparent,
                   tabs: const [
-                    Tab(text: 'Players'),
-                    Tab(text: 'Rooms'),
+                    Tab(text: '玩家'),
+                    Tab(text: '房間'),
                   ],
                 ),
               ],
@@ -103,7 +103,7 @@ class _NearbyPanelState extends State<NearbyPanel>
               children: [
                 // Players list
                 widget.players.isEmpty
-                    ? const Center(child: Text('No players nearby'))
+                  ? const Center(child: Text('附近沒有玩家'))
                     : ListView.separated(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -119,7 +119,7 @@ class _NearbyPanelState extends State<NearbyPanel>
                       ),
                 // Rooms list
                 widget.rooms.isEmpty
-                    ? const Center(child: Text('No rooms nearby'))
+                  ? const Center(child: Text('附近沒有房間'))
                     : ListView.separated(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -241,7 +241,7 @@ class _RoomCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             Text(
-              '${room.distanceKm.toStringAsFixed(1)} km away',
+              '距離 ${room.distanceKm.toStringAsFixed(1)} 公里',
               style: AppTypography.labelSmall,
             ),
           ],

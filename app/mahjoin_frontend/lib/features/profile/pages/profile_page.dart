@@ -7,6 +7,9 @@ import '../../../core/network/ws_client.dart';
 import '../../../core/router/router.dart';
 import '../../../core/storage/session.dart';
 import '../../../data/services/broadcast_service.dart';
+import 'help_support_page.dart';
+import 'notification_settings_page.dart';
+import 'privacy_page.dart';
 import 'profile_placeholder_page.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -15,14 +18,13 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = Session.instance;
-    final displayName = session.userName ?? 'Player';
+    final displayName = session.userName ?? '玩家';
     final initials = session.avatarInitials;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // ── App bar with profile header ───────────────────────────
           SliverAppBar(
             expandedHeight: 220,
             pinned: true,
@@ -35,15 +37,13 @@ class ProfilePage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 16),
-                      // Avatar
                       Container(
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.25),
                           shape: BoxShape.circle,
-                          border:
-                              Border.all(color: Colors.white, width: 3),
+                          border: Border.all(color: Colors.white, width: 3),
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -58,8 +58,8 @@ class ProfilePage extends StatelessWidget {
                       const SizedBox(height: 10),
                       Text(
                         displayName,
-                        style: AppTypography.headlineLarge
-                            .copyWith(color: Colors.white),
+                        style:
+                            AppTypography.headlineLarge.copyWith(color: Colors.white),
                       ),
                       const SizedBox(height: 4),
                       if (session.userId != null)
@@ -79,23 +79,18 @@ class ProfilePage extends StatelessWidget {
                 color: Colors.white,
                 onPressed: () => _openPlaceholder(
                   context,
-                  title: 'Settings',
-                  description:
-                      'Settings panel is being built. Theme and account preferences will be available here.',
+                  title: '設定',
+                  description: '設定頁面仍在持續擴充，後續將提供更多帳號與介面偏好。',
                 ),
               ),
             ],
           ),
-
-          // ── Broadcast toggle ──────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: _BroadcastToggleTile(),
             ),
           ),
-
-          // ── Menu items ────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -104,21 +99,18 @@ class ProfilePage extends StatelessWidget {
                   _MenuSection(items: [
                     _MenuItem(
                       icon: Icons.history_rounded,
-                      label: 'Game History',
+                      label: '對局紀錄',
                       onTap: () => _openPlaceholder(
                         context,
-                        title: 'Game History',
-                        description:
-                            'Match history and statistics are under development.',
+                        title: '對局紀錄',
+                        description: '對局歷史與統計功能仍在開發中。',
                       ),
                     ),
                     _MenuItem(
                       icon: Icons.people_rounded,
-                      label: 'Friends',
+                      label: '好友',
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const FriendsPage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const FriendsPage()),
                       ),
                     ),
                   ]),
@@ -126,32 +118,25 @@ class ProfilePage extends StatelessWidget {
                   _MenuSection(items: [
                     _MenuItem(
                       icon: Icons.notifications_rounded,
-                      label: 'Notifications',
-                      onTap: () => _openPlaceholder(
-                        context,
-                        title: 'Notifications',
-                        description:
-                            'Notification preference controls are under development.',
+                      label: '通知',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationSettingsPage(),
+                        ),
                       ),
                     ),
                     _MenuItem(
                       icon: Icons.privacy_tip_rounded,
-                      label: 'Privacy',
-                      onTap: () => _openPlaceholder(
-                        context,
-                        title: 'Privacy',
-                        description:
-                            'Privacy and visibility settings are under development.',
+                      label: '隱私',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PrivacyPage()),
                       ),
                     ),
                     _MenuItem(
                       icon: Icons.help_rounded,
-                      label: 'Help & Support',
-                      onTap: () => _openPlaceholder(
-                        context,
-                        title: 'Help & Support',
-                        description:
-                            'Support center and FAQ links are under development.',
+                      label: '幫助與支援',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const HelpSupportPage()),
                       ),
                     ),
                   ]),
@@ -159,9 +144,11 @@ class ProfilePage extends StatelessWidget {
                   _MenuSection(items: [
                     _MenuItem(
                       icon: Icons.logout_rounded,
-                      label: 'Sign Out',
+                      label: '登出',
                       onTap: () async {
-                        try { await BroadcastService.instance.stop(); } catch (_) {}
+                        try {
+                          await BroadcastService.instance.stop();
+                        } catch (_) {}
                         WsClient.instance.disconnect();
                         await Session.instance.clear();
                         if (context.mounted) context.go(AppRoutes.onboarding);
@@ -210,14 +197,10 @@ class _BroadcastToggleTileState extends State<_BroadcastToggleTile> {
     final on = _on;
     return Container(
       decoration: BoxDecoration(
-        color: on
-            ? AppColors.primary.withOpacity(0.06)
-            : AppColors.surface,
+        color: on ? AppColors.primary.withOpacity(0.06) : AppColors.surface,
         borderRadius: AppRadius.lg,
         border: Border.all(
-          color: on
-              ? AppColors.primary.withOpacity(0.3)
-              : AppColors.divider,
+          color: on ? AppColors.primary.withOpacity(0.3) : AppColors.divider,
         ),
       ),
       child: SwitchListTile(
@@ -225,23 +208,19 @@ class _BroadcastToggleTileState extends State<_BroadcastToggleTile> {
         onChanged: _loading ? null : _toggle,
         activeColor: AppColors.primary,
         title: Text(
-          on ? 'Broadcasting Location' : 'Hidden from Map',
+          on ? '已開啟位置廣播' : '目前隱藏於地圖',
           style: AppTypography.headlineMedium,
         ),
         subtitle: Text(
-          on
-              ? 'Players nearby can see you on the map'
-              : 'Turn on to appear on the map',
-          style: AppTypography.bodyMedium
-              .copyWith(color: AppColors.textSecondary),
+          on ? '附近玩家可以在地圖上看到你' : '開啟後才會顯示在附近玩家地圖上',
+          style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
         ),
         secondary: Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: on
-                ? AppColors.primary.withOpacity(0.1)
-                : AppColors.surfaceVariant,
+            color:
+                on ? AppColors.primary.withOpacity(0.1) : AppColors.surfaceVariant,
             shape: BoxShape.circle,
           ),
           child: _loading
@@ -325,8 +304,7 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        destructive ? AppColors.full : AppColors.textPrimary;
+    final color = destructive ? AppColors.full : AppColors.textPrimary;
 
     return ListTile(
       onTap: onTap,
@@ -341,8 +319,7 @@ class _MenuItem extends StatelessWidget {
         ),
         child: Icon(icon, color: color, size: 18),
       ),
-      title: Text(label,
-          style: AppTypography.bodyMedium.copyWith(color: color)),
+      title: Text(label, style: AppTypography.bodyMedium.copyWith(color: color)),
       trailing: destructive
           ? null
           : const Icon(Icons.chevron_right_rounded,

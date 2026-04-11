@@ -17,9 +17,9 @@ class RoomStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
-      RoomStatus.waiting => ('$current/$max Waiting', AppColors.waiting),
-      RoomStatus.playing => ('Playing', AppColors.secondary),
-      RoomStatus.full => ('Full', AppColors.full),
+      RoomStatus.waiting => ('$current/$max 等待中', AppColors.waiting),
+      RoomStatus.playing => ('進行中', AppColors.secondary),
+      RoomStatus.full => ('已滿', AppColors.full),
     };
 
     return Container(
@@ -53,9 +53,9 @@ class PlayerStatusDot extends StatelessWidget {
       PlayerStatus.offline => AppColors.offline,
     };
     final label = switch (status) {
-      PlayerStatus.online => 'Online',
-      PlayerStatus.playing => 'Playing',
-      PlayerStatus.offline => 'Offline',
+      PlayerStatus.online => '在線',
+      PlayerStatus.playing => '對局中',
+      PlayerStatus.offline => '離線',
     };
 
     return Row(

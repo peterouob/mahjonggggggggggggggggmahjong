@@ -13,7 +13,7 @@ class RoomFullPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Room Full'),
+        title: const Text('房間已滿'),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => context.go(AppRoutes.map),
@@ -40,20 +40,20 @@ class RoomFullPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'All Players Are Ready',
+                '玩家已全員就緒',
                 style: AppTypography.headlineLarge,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Room is now full. Coordinate with your group and start the game!',
+                '房間已滿員，快與隊友會合，準備開局。',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                'Room ID: $roomId',
+                '房間 ID：$roomId',
                 style: AppTypography.labelSmall
                     .copyWith(color: AppColors.textMuted),
               ),
@@ -61,12 +61,12 @@ class RoomFullPage extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => context.go(AppRoutes.room(roomId)),
                 icon: const Icon(Icons.table_restaurant_rounded),
-                label: const Text('Back to Room Details'),
+                label: const Text('返回房間詳情'),
               ),
               const SizedBox(height: AppSpacing.sm),
               TextButton(
                 onPressed: () => context.go(AppRoutes.map),
-                child: const Text('Back to Map'),
+                child: const Text('返回地圖'),
               ),
             ],
           ),

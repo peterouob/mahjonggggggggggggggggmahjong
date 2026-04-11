@@ -68,7 +68,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       case AppEventType.roomDissolved:
         final roomId = event.data['roomId'] as String?;
         if (roomId != widget.roomId) return;
-        _snack('Room was dissolved');
+        _snack('房間已解散');
         context.go(AppRoutes.map);
         break;
       default:
@@ -92,7 +92,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     } catch (e) {
       setState(() {
         _loading = false;
-        _error = mapApiError(e, fallback: 'Could not load room details.');
+        _error = mapApiError(e, fallback: '無法載入房間資訊。');
       });
     }
   }
@@ -103,33 +103,33 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       await ApiClient.post('/api/v1/rooms/${widget.roomId}/join', {});
       await _loadRoom(); // Refresh to see updated member list
     } catch (e) {
-      if (mounted) _snack(mapApiError(e, fallback: 'Failed to join room.'));
+      if (mounted) _snack(mapApiError(e, fallback: '加入房間失敗。'));
     } finally {
       if (mounted) setState(() => _acting = false);
     }
   }
 
   Future<void> _leave() async {
-    if (!await _confirm('Leave Room', 'Are you sure you want to leave this room?')) return;
+    if (!await _confirm('離開房間', '確定要離開這個房間嗎？')) return;
     setState(() => _acting = true);
     try {
       await ApiClient.post('/api/v1/rooms/${widget.roomId}/leave', {});
       if (mounted) context.pop();
     } catch (e) {
-      if (mounted) _snack(mapApiError(e, fallback: 'Failed to leave room.'));
+      if (mounted) _snack(mapApiError(e, fallback: '離開房間失敗。'));
       setState(() => _acting = false);
     }
   }
 
   Future<void> _dissolve() async {
-    if (!await _confirm('Dissolve Room', 'This will close the room for all players. Continue?')) return;
+    if (!await _confirm('解散房間', '這會關閉所有玩家的房間，確定繼續嗎？')) return;
     setState(() => _acting = true);
     try {
       await ApiClient.delete('/api/v1/rooms/${widget.roomId}');
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
-        _snack(mapApiError(e, fallback: 'Failed to dissolve room.'));
+        _snack(mapApiError(e, fallback: '解散房間失敗。'));
       }
       setState(() => _acting = false);
     }
@@ -145,7 +145,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: Text('Cancel',
+                child: Text('取消',
                     style: TextStyle(color: AppColors.textSecondary)),
               ),
               TextButton(
@@ -169,7 +169,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Room'),
+        title: const Text('房間詳情'),
         backgroundColor: AppColors.surface,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
@@ -213,11 +213,11 @@ class _ErrorView extends StatelessWidget {
           const Icon(Icons.error_outline_rounded,
               size: 48, color: AppColors.textMuted),
           const SizedBox(height: 12),
-          Text('Could not load room', style: AppTypography.headlineMedium),
+          Text('無法載入房間', style: AppTypography.headlineMedium),
           const SizedBox(height: 8),
           TextButton(
             onPressed: onRetry,
-            child: const Text('Retry'),
+            child: const Text('重試'),
           ),
         ],
       ),
@@ -247,9 +247,9 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (statusColor, statusLabel) = switch (room.status) {
-      RoomStatus.waiting => (AppColors.online, 'Waiting for Players'),
-      RoomStatus.playing => (AppColors.secondary, 'Playing'),
-      RoomStatus.full => (AppColors.waiting, 'Full'),
+      RoomStatus.waiting => (AppColors.online, '等待玩家中'),
+      RoomStatus.playing => (AppColors.secondary, '對局進行中'),
+      RoomStatus.full => (AppColors.waiting, '已滿員'),
     };
 
     return SingleChildScrollView(
@@ -285,7 +285,7 @@ class _Body extends StatelessWidget {
                 Text('${room.currentPlayers}/${room.maxPlayers}',
                     style: AppTypography.headlineMedium
                         .copyWith(color: statusColor)),
-                Text(' players', style: AppTypography.bodyMedium),
+                Text(' 位玩家', style: AppTypography.bodyMedium),
               ],
             ),
           ),
@@ -326,7 +326,7 @@ class _Body extends StatelessWidget {
                         const Icon(Icons.person_rounded,
                             size: 13, color: AppColors.textMuted),
                         const SizedBox(width: 4),
-                        Text('Host: ${room.hostName}',
+                        Text('房主：${room.hostName}',
                             style: AppTypography.bodyMedium
                                 .copyWith(color: AppColors.textSecondary)),
                       ]),
@@ -336,7 +336,7 @@ class _Body extends StatelessWidget {
                             size: 13, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Text(
-                            '${room.distanceKm.toStringAsFixed(1)} km away',
+                          '距離 ${room.distanceKm.toStringAsFixed(1)} 公里',
                             style: AppTypography.bodyMedium
                                 .copyWith(color: AppColors.textSecondary)),
                       ]),
@@ -350,7 +350,7 @@ class _Body extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
 
           // ── Player slots ───────────────────────────────────────────
-          Text('Players', style: AppTypography.labelLarge),
+          Text('玩家席位', style: AppTypography.labelLarge),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: List.generate(room.maxPlayers, (i) {
@@ -433,7 +433,7 @@ class _Body extends StatelessWidget {
               ),
               onPressed: onDissolve,
               icon: const Icon(Icons.delete_rounded),
-              label: const Text('Dissolve Room'),
+              label: const Text('解散房間'),
             )
           else if (isMember)
             ElevatedButton.icon(
@@ -443,7 +443,7 @@ class _Body extends StatelessWidget {
               ),
               onPressed: onLeave,
               icon: const Icon(Icons.exit_to_app_rounded),
-              label: const Text('Leave Room'),
+              label: const Text('離開房間'),
             )
           else
             ElevatedButton.icon(
@@ -453,7 +453,7 @@ class _Body extends StatelessWidget {
               ),
               onPressed: onJoin,
               icon: const Icon(Icons.login_rounded),
-              label: const Text('Join Room'),
+              label: const Text('加入房間'),
             ),
 
           const SizedBox(height: AppSpacing.lg),

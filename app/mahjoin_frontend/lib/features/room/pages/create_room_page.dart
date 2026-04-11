@@ -42,7 +42,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a room name')),
+        const SnackBar(content: Text('請輸入房間名稱')),
       );
       return;
     }
@@ -77,13 +77,13 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapApiError(e, fallback: 'Failed to create room.'))),
+        SnackBar(content: Text(mapApiError(e, fallback: '建立房間失敗。'))),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapApiError(e, fallback: 'Failed to create room.'))),
+        SnackBar(content: Text(mapApiError(e, fallback: '建立房間失敗。'))),
       );
     }
   }
@@ -91,13 +91,13 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
   @override
   Widget build(BuildContext context) {
     final session = Session.instance;
-    final displayName = session.userName ?? 'You';
+    final displayName = session.userName ?? '你';
     final initials = session.avatarInitials;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Create Room'),
+        title: const Text('建立房間'),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.pop(context),
@@ -127,13 +127,13 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Your location will be shared',
+                        Text('將分享你的目前位置',
                             style: AppTypography.labelLarge
                                 .copyWith(color: AppColors.primary)),
                         Text(
                           _selectedLocation == null
-                              ? 'Players within 5 km can see and join your room'
-                              : 'Using your selected map position for this room',
+                            ? '5 公里內玩家可看到並加入你的房間'
+                            : '已使用你在地圖上選定的位置建立房間',
                           style: AppTypography.bodyMedium.copyWith(
                               color: AppColors.primary.withOpacity(0.7)),
                         ),
@@ -153,12 +153,12 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
             const SizedBox(height: AppSpacing.lg),
 
             // Room name input
-            Text('Room Name', style: AppTypography.labelLarge),
+            Text('房間名稱', style: AppTypography.labelLarge),
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _nameController,
               decoration: const InputDecoration(
-                hintText: 'e.g. Coffee shop near MRT',
+                hintText: '例如：捷運站附近咖啡廳',
                 prefixIcon: Icon(Icons.edit_rounded,
                     color: AppColors.textMuted, size: 20),
               ),
@@ -167,12 +167,12 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
             const SizedBox(height: AppSpacing.md),
 
-            Text('Place Name (Optional)', style: AppTypography.labelLarge),
+            Text('地點名稱（選填）', style: AppTypography.labelLarge),
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _placeController,
               decoration: const InputDecoration(
-                hintText: 'e.g. Taipei Main Station',
+                hintText: '例如：台北車站',
                 prefixIcon: Icon(Icons.place_rounded,
                     color: AppColors.textMuted, size: 20),
               ),
@@ -181,7 +181,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
             const SizedBox(height: AppSpacing.md),
 
-            Text('Game Rule', style: AppTypography.labelLarge),
+            Text('遊戲規則', style: AppTypography.labelLarge),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               value: _gameRule,
@@ -191,11 +191,11 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               ),
               items: const [
                 DropdownMenuItem(
-                    value: 'TAIWAN_MAHJONG', child: Text('Taiwan Mahjong')),
+                  value: 'TAIWAN_MAHJONG', child: Text('台灣麻將')),
                 DropdownMenuItem(
-                    value: 'THREE_PLAYER', child: Text('Three Player')),
+                  value: 'THREE_PLAYER', child: Text('三人麻將')),
                 DropdownMenuItem(
-                    value: 'NATIONAL_STANDARD', child: Text('National Standard')),
+                  value: 'NATIONAL_STANDARD', child: Text('國標麻將')),
               ],
               onChanged: (v) {
                 if (v == null) return;
@@ -209,11 +209,11 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               contentPadding: EdgeInsets.zero,
               value: _isPublic,
               onChanged: (v) => setState(() => _isPublic = v),
-              title: Text('Public Room', style: AppTypography.labelLarge),
+                title: Text('公開房間', style: AppTypography.labelLarge),
               subtitle: Text(
                 _isPublic
-                    ? 'Visible to nearby players'
-                    : 'Only available by direct room entry',
+                  ? '可被附近玩家看到'
+                  : '僅能透過直接進入房間加入',
                 style: AppTypography.labelSmall
                     .copyWith(color: AppColors.textSecondary),
               ),
@@ -223,7 +223,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
             const SizedBox(height: AppSpacing.lg),
 
             // Room preview
-            Text('Room Preview', style: AppTypography.labelLarge),
+            Text('房間預覽', style: AppTypography.labelLarge),
             const SizedBox(height: AppSpacing.sm),
             Container(
               decoration: BoxDecoration(
@@ -252,7 +252,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                         children: [
                           Text(displayName,
                               style: AppTypography.headlineMedium),
-                          Text('Host · Waiting for players',
+                            Text('房主 · 等待玩家加入',
                               style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.textSecondary)),
                         ],
@@ -309,7 +309,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.add_rounded),
-              label: Text(_loading ? 'Creating...' : 'Open Room'),
+              label: Text(_loading ? '建立中...' : '開啟房間'),
             ),
           ],
         ),

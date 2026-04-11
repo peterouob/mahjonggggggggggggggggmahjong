@@ -26,4 +26,24 @@ class Preferences {
     await prefs.remove(_keyUserId);
     await prefs.remove(_keyUserName);
   }
+
+  static Future<void> setBool(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+  }
+
+  static Future<bool> getBool(String key, {required bool fallback}) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(key) ?? fallback;
+  }
+
+  static Future<void> setString(String key, String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
+
+  static Future<String> getString(String key, {required String fallback}) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key) ?? fallback;
+  }
 }
